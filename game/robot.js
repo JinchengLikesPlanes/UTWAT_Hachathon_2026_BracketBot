@@ -87,7 +87,7 @@ export const AXLE = { x: 0.0113, z: 0.0776 }
 // Spin a link's visual about an axis given in the robot's root frame. The pivot is the mesh's
 // bounding-box centre projected onto the axle line (so a tyre turns about the axle, not its own
 // bounding box). Used for the wheels: the URDF fixes them, so the game rotates the tyre mesh.
-export function makeSpinner(robot, linkName, axisRoot = new THREE.Vector3(0, 1, 0), onAxle = true) {
+export function makeSpinner(robot, linkName, axisRoot = new THREE.Vector3(0, 1, 0), onAxle = true, { carry = [] } = {}) {
   const link = robot.links.get(linkName)
   const holder = link.children.find(c => c.name.endsWith(':visual'))
   if (!holder) return { setAngle() {} }
@@ -102,10 +102,19 @@ export function makeSpinner(robot, linkName, axisRoot = new THREE.Vector3(0, 1, 
   const centreLocal = link.worldToLocal(centreWorld.clone())
   const rootQuat = robot.group.getWorldQuaternion(new THREE.Quaternion())
   const linkQuat = link.getWorldQuaternion(new THREE.Quaternion())
-  const axisLocal = axisRoot.clone().applyQuaternion(rootQuat).applyQuaternion(linkQuat.invert()).normalize()
+  const linkInv = linkQuat.invert()
+  const axisLocal = axisRoot.clone().applyQuaternion(rootQuat).applyQuaternion(linkInv).normalize()
+  const upLocal = new THREE.Vector3(0, 0, 1).applyQuaternion(rootQuat).applyQuaternion(linkInv).normalize()   // root Z (up)
   const pivot = new THREE.Group()
   pivot.position.copy(centreLocal)
   link.add(pivot)
   pivot.attach(holder)
-  return { setAngle: a => pivot.setRotationFromAxisAngle(axisLocal, a) }
+  // a head carries its camera with it: named child links ride the pivot too
+  for (const name of carry) { const c = robot.links.get(name); if (c && c.parent === link) pivot.attach(c) }
+  const qa = new THREE.Quaternion(), qb = new THREE.Quaternion()
+  return {
+    setAngle: a => pivot.setRotationFromAxisAngle(axisLocal, a),
+    // angle about the given axis plus a turn about the robot's up axis (a head that nods and looks around)
+    setAngles: (a, turn) => pivot.quaternion.copy(qa.setFromAxisAngle(upLocal, turn)).multiply(qb.setFromAxisAngle(axisLocal, a)),
+  }
 }

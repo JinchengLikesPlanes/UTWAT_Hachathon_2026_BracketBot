@@ -11,7 +11,7 @@ import { buildTable, TABLE_H } from './table.js'
 
 const S = () => STR.vision
 const CAM_OFFSET_X = 0.055          // camera cover centre, forward of the robot origin (measured from the URDF meshes)
-const HEAD = 'head__head__head__head'
+const HEAD = 'head__head__head__head', CAMERA = 'camera_cover__camera_cover__camera_cover__camera_cover'
 const TEACH_SERVE = 1, GAP_SERVE = 28   // serves whose numbers make each lesson visible
 const PLAY_SPEED = 0.4              // playback slow-down so 30 fps frames can be watched
 
@@ -30,21 +30,22 @@ export async function showLevel(app) {
   marker.visible = false
   const truthRing = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.006, 8, 24), new THREE.MeshBasicMaterial({ color: 0x4ade80 }))
   truthRing.rotation.y = Math.PI / 2; truthRing.visible = false
-  // frustum: camera eye to the four image corners at 1 m
-  const cy = TABLE_H + V.CAM.y, cp = Math.cos(V.CAM.pitch), sp = Math.sin(V.CAM.pitch)
-  const corner = (a, b) => new THREE.Vector3(V.CAM.x + (cp + b * sp), cy + (-sp + b * cp), a)
+  // frustum: camera eye to the four image corners at 1 m, built looking straight ahead and turned
+  // with the head (nod = rotation about z, turn = rotation about y)
+  const cy = TABLE_H + V.CAM.y
   const ha = (V.CAM.W / 2) / V.F, hb = (V.CAM.H / 2) / V.F
-  const eye = new THREE.Vector3(V.CAM.x, cy, 0)
-  const cs = [corner(-ha, hb), corner(ha, hb), corner(ha, -hb), corner(-ha, -hb)]
+  const cs = [[-ha, hb], [ha, hb], [ha, -hb], [-ha, -hb]].map(([a, b]) => new THREE.Vector3(1, b, a))
   const pts = []
-  for (let i = 0; i < 4; i++) pts.push(eye, cs[i], cs[i], cs[(i + 1) % 4])
+  for (let i = 0; i < 4; i++) pts.push(new THREE.Vector3(), cs[i], cs[i], cs[(i + 1) % 4])
   const frustum = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.5 }))
+  frustum.position.set(V.CAM.x, cy, 0)
+  const look = (nod, turn) => { frustum.rotation.set(0, -turn, -nod, 'YZX'); head.setAngles(nod, -turn) }
   dressing.add(ball, marker, truthRing, frustum)
   view.scene.add(dressing)
 
   // the robot stands so the camera cover is exactly where the sim's camera is; the head nods down by the sim's pitch
   robot.group.position.set(V.CAM.x - CAM_OFFSET_X, 0, 0)
-  const head = makeSpinner(robot, HEAD, undefined, false)
+  const head = makeSpinner(robot, HEAD, undefined, false, { carry: [CAMERA] })
   view.lookAt(view.phone() ? [1.0, 1.9, 4.6] : [1.3, 1.9, 4.4], view.phone() ? [1.0, 1.0, 0] : [1.2, 1.0, 0], { width: 4.6, height: 2.2 })
 
   // --- camera views in the panel: colour (+ detection mask) and depth ---
@@ -78,11 +79,27 @@ export async function showLevel(app) {
   }
 
   // --- playback of a tracked serve ---
+  // Idle: while the player is choosing, a ball dribbles about on the far half and the head follows it
+  // with its eyes (nod + turn), the arms sway — the robot is watching for the next serve.
   let play = null, idleT = 0
+  const idleBall = { x: 2.1, z: 0 }
   app.tick = dt => {
     idleT += dt
-    if (!play) { head.setAngle(V.CAM.pitch + 0.04 * Math.sin(idleT * 0.8)); robot.setJoint('rj1', 0.1 + 0.04 * Math.sin(idleT * 1.1)); robot.setJoint('lj1', 0.1 + 0.04 * Math.sin(idleT * 1.1 + 2)); return }
-    head.setAngle(V.CAM.pitch)
+    if (!play) {
+      idleBall.x = 2.1 + 0.35 * Math.sin(idleT * 0.45)
+      idleBall.z = 0.45 * Math.sin(idleT * 0.7 + 1)
+      const bounce = Math.abs(Math.sin(idleT * 3.2)) * 0.18
+      ball.position.set(idleBall.x, TABLE_H + V.BALL_R + bounce, idleBall.z); ball.visible = true
+      // look at the ball: turn toward its side, nod to its distance
+      const dx = idleBall.x - V.CAM.x, dy = (TABLE_H + bounce) - cy
+      look(Math.atan2(-dy, dx) * 0.9, Math.atan2(idleBall.z, dx))
+      robot.setJoint('rj1', 0.12 + 0.06 * Math.sin(idleT * 1.1))
+      robot.setJoint('rj2', 0.1 * Math.sin(idleT * 0.9 + 0.5))
+      robot.setJoint('lj1', 0.12 + 0.06 * Math.sin(idleT * 1.1 + 2))
+      robot.setJoint('lj2', 0.1 * Math.sin(idleT * 0.8 + 2.5))
+      return
+    }
+    look(V.CAM.pitch, 0)
     play.t += dt * play.speed
     const k = Math.min(play.r.frames.length - 1, Math.floor(play.t * V.CAM.fps))
     if (k !== play.k) {
@@ -103,7 +120,7 @@ export async function showLevel(app) {
     play = { r, t: 0, k: -1, speed, onFrame, onDone, showTruth }
   }
   const runServe = (n, opts) => V.track(V.serveFor(n), { ...opts, keepFrames: true }, V.rngFor(n))
-  const cleanup = () => { view.scene.remove(dressing); head.setAngle(0); robot.group.position.set(0, 0, 0); app.tick = null }
+  const cleanup = () => { view.scene.remove(dressing); head.setAngles(0, 0); robot.group.position.set(0, 0, 0); app.tick = null }
   const teach = (text, kind, onClose) => popup({ text, kind, closeLabel: STR.common.gotIt, onClose })
   const pct = v => Math.round(v * 100), cm = v => (v * 100).toFixed(1)
 
