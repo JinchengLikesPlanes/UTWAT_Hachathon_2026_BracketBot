@@ -1,0 +1,1 @@
+"""BracketBot table-tennis simulation."""

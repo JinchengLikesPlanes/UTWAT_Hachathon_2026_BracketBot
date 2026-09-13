@@ -1,378 +1,268 @@
-# BracketBot introductory robotics lab
-
-  ## 1. Product and technical foundation
-
-  Build a local browser application containing exactly three learning modules:
-
-  1. PID: adjust parameters to help BracketBot maintain a target position.
-  2. Reinforcement learning: train a ping-pong model through five explicit stages.
-  3. Visual machine learning: teach a model to recognize red, blue, and yellow objects.
-
-  The audience is ages 10–13 with teacher guidance. Each module takes approximately 15–20
-  minutes. Students use buttons, sliders, and visual examples; coding and equations are optional
-  explanations.
-
-  Every lesson follows instruction → experiment → visible result → short explanation. Keep the
-  interface focused on the current task, with no additional story world, economy, multiplayer, or
-  competitive leaderboard.
-
-  Delivery and stack
-
-  - React, TypeScript, and Vite for the browser interface.
-  - Three.js for robot visualization; MuJoCo remains authoritative for robot physics.
-  - FastAPI for the local Python service.
-  - Existing Gymnasium and Stable-Baselines3 PPO for RL.
-  - A small PyTorch classifier for the vision module.
-  - Local JSON records for progress and experiments; no accounts or cloud services.
-  - One active learner session and one training job per local server in v1.
-  - One launcher starts the service and serves the built frontend on localhost.
-
-  Preserve the existing desktop game and training commands. Reuse the robot assets, physics, and
-  single-return environment; implement educational behavior separately so existing checkpoints
-  retain their meaning.
-
-  Real-world scope: provide physical experiment guides for all three modules. This release does
-  not send commands to physical hardware or claim calibrated simulation-to-real transfer.
-
-  ## 2. Learning modules
-
-  ### Module A — PID: help BracketBot hold its position
-
-  Learning outcome: students understand that a controller measures error and corrects motion, and
-  that stronger correction can cause oscillation.
-
-  Use a level-floor scene with a target marker and BracketBot facing forward. Arms remain parked.
-  Control forward position through the wheels; “stability” means maintaining position, not
-  balancing an unsupported two-wheel robot.
-
-  Implement a dedicated PID simulation using the existing chassis geometry and wheel contacts.
-  The PID produces a bounded forward-speed command; a fixed heading controller keeps the robot
-  facing forward.
-
-   Step                      Student interaction                Feedback
-  ━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   1. See the error          Run with correction disabled;      Highlight target position,
-                             apply a preset push                actual position, and their
-                                                                difference
-  ────────────────────────  ─────────────────────────────────  ──────────────────────────────────
-   2. Adjust P               Change “Correction strength —      Show slow recovery or overshoot
-                             P” and repeat the same
-                             experiment
-  ────────────────────────  ─────────────────────────────────  ──────────────────────────────────
-   3. Adjust D               Unlock “Damping — D”               Show reduced oscillation
-  ────────────────────────  ─────────────────────────────────  ──────────────────────────────────
-   4. Adjust I               Apply a small persistent           Show remaining offset reducing
-                             disturbance; unlock “Persistent
-                             correction — I”
-  ────────────────────────  ─────────────────────────────────  ──────────────────────────────────
-   5. Test the controller    Run three predefined               Compare recovery, overshoot, and
-                             disturbance trials                 final error
-
-  Implementation requirements
-
-  - Use error = target_position − measured_position.
-  - Compute PID at a fixed 50 Hz; retain the existing 1 ms physics timestep.
-  - Use derivative on measurement with filtering, output saturation, and integral anti-windup.
-  - Reset controller history whenever an experiment resets.
-  - Apply slider changes between trials so comparisons are reproducible.
-  - Show a live position graph with target and actual position; expose individual PID
-    contributions under “More detail.”
-
-  - Store gains, disturbance preset, seed, and measured outcome for each trial.
-  - Establish bounded slider ranges through a calibration sweep on this simulation. Commit the
-    resulting ranges and example presets before building the lesson around them; do not present
-    them as hardware gains.
-
-  Completion criteria
-
-  Run all three test disturbances, hold position within 5 cm for the final two seconds of each
-  eight-second trial, and answer a short P/D/I matching question. Provide a suggested working
-  preset after three unsuccessful attempts, while still requiring students to rerun and inspect
-  the result.
-
-  The calibration gate must establish that these criteria are achievable without actuator
-  saturation dominating the demonstration.
-
-  Physical guide
-
-  Describe a marked floor position, position measurement, a supervised low-speed controller, and
-  repeatable disturbances. List required sensing and manufacturer-approved operating limits.
-  Explicitly require hardware gain calibration.
-
-  ### Module B — RL: five stages of training a ping-pong model
-
-  Learning outcome: students can describe the task, observations, actions, rewards, training, and
-  evaluation.
-
-  Use the existing fixed-base, six-arm-joint single-return task. Keep the lift and chassis fixed
-  in this lesson. Explain that the robot starts in a prepared pose and receives an incoming ball
-  after its nominal bounce.
-
-  The five stages are training-workflow stages, not five opponent difficulty levels.
-
-   Stage                                 Student task                 Actual application
-                                                                      behavior
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   1. Set the task                       Identify a successful        Set the goal to paddle
-                                         return from three            contact followed by
-                                         illustrated outcomes         landing on the far table
-                                                                      half
-  ────────────────────────────────────  ───────────────────────────  ────────────────────────────
-   2. Define observations and actions    Sort cards into “Robot       Highlight ball position/
-                                         senses” and “Robot           velocity and arm state;
-                                         controls”                    animate bounded arm
-                                                                      actions
-  ────────────────────────────────────  ───────────────────────────  ────────────────────────────
-   3. Choose rewards                     Compare “touch the ball”     Show how identical
-                                         with “return the ball”       outcomes receive different
-                                         reward presets               rewards
-  ────────────────────────────────────  ───────────────────────────  ────────────────────────────
-   4. Train                              Choose a reward preset,      Run a real bounded PPO
-                                         press Train, and inspect     job, showing attempts,
-                                         progress                     reward, and checkpoint
-                                                                      evaluations
-  ────────────────────────────────────  ───────────────────────────  ────────────────────────────
-   5. Evaluate                           Test the before/after        Show contacts and legal
-                                         policies on unseen shots     returns out of 20, then
-                                                                      explain the difference
-
-  Keep the configuration accessible
-
-  - Observation and action cards teach the actual interface; students do not construct arbitrary
-    tensors.
-
-  - Retain the existing 32-value observation and six-value action interface.
-  - Offer two reward presets: contact-focused and legal-return-focused.
-  - Report contact and legal-return metrics under both presets; reward alone never determines
-    success.
-
-  - Expose no optimizer, network-size, or PPO hyperparameter controls in the student interface.
-
-  Training behavior
-
-  - Add a lesson-specific reward configuration while preserving existing environment defaults.
-  - Use PPO with the existing small network configuration.
-  - A classroom run performs 10,240 additional steps with one environment, with progress events
-    and cancellation.
-
-  - Start classroom runs from a bundled, deliberately early checkpoint. Label the operation
-    “Continue training.”
-
-  - Provide a teacher option to start from scratch; do not promise that a short run will learn a
-    successful return.
-
-  - Prepare and bundle reference checkpoints and their real training records for comparison.
-  - Clearly label reference demonstrations separately from the student’s live run.
-  - If a live run fails or does not improve, preserve its results and allow reference comparison;
-    never substitute a reference result silently.
-
-  - Changing reward presets starts a new experiment from the same early checkpoint.
-  - Separate training, checkpoint-selection validation, and lesson evaluation seeds.
-  - Use paired evaluation shots for before/after comparisons. Describe repeated use as a
-    classroom comparison set, not a fresh scientific holdout.
-
-  Completion criteria
-
-  Complete the five interactions, run or explicitly inspect a reference training experiment,
-  evaluate a policy, and correctly distinguish training reward from legal-return performance.
-  Lesson completion does not depend on stochastic training improving within a short session.
-
-  Physical guide
-
-  Explain the corresponding robot, paddle, repeatable ball feed, ball tracking, and contact/
-  landing measurements. Distinguish simulation state observations from what physical sensors must
-  estimate. Include a staged reproduction procedure; deploying a PPO checkpoint requires a
-  separate calibrated hardware project.
-
-  ### Module C — vision: teach three object colors
-
-  Learning outcome: students understand examples, labels, training, and testing on different
-  images.
-
-  Use red, blue, and yellow objects against several backgrounds. This is image classification of
-  one centered object, not detection or robotic sorting.
-
-   Step                    Student interaction                 Result
-  ━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   1. Label                Sort 18 starter images, six per     Build a labeled training set
-                           class
-  ──────────────────────  ──────────────────────────────────  ───────────────────────────────────
-   2. Train                Press Train                         Fit a small classifier using
-                                                               their labels
-  ──────────────────────  ──────────────────────────────────  ───────────────────────────────────
-   3. Test                 Reveal predictions on 12            Show correct predictions out of
-                           separate images                     12 and per-class results
-  ──────────────────────  ──────────────────────────────────  ───────────────────────────────────
-   4. Improve              Add six examples with different     Retrain and compare on the same
-                           lighting/backgrounds                disclosed classroom test set
-  ──────────────────────  ──────────────────────────────────  ───────────────────────────────────
-   5. Try a real object    Use a webcam or upload an image     Classify the centered crop and
-                                                               show prediction scores
-
-  Implementation requirements
-
-  - Use fixed color features from the center crop, followed by a trainable three-class linear
-    softmax classifier in PyTorch.
-
-  - Do not implement classification as hand-coded red/blue/yellow thresholds.
-  - Use deterministic training with fixed initialization and a small fixed epoch budget.
-  - Bundle images locally, including deliberately challenging lighting and background examples.
-  - Keep training and test source images separate; avoid near-duplicate frames across splits.
-  - Teach that prediction scores are not guarantees.
-  - Require at least two labeled examples per class before training; the guided path supplies
-    six.
-
-  - Webcam use is optional. Uploaded images and bundled examples complete the same learning
-    objectives.
-
-  - Keep image processing local and camera captures in memory unless explicitly saved.
-  - Provide a centered-object guide and explain that the classifier has only learned three
-    classes; do not claim it can reliably reject every unfamiliar object.
-
-  Completion criteria
-
-  Label examples, train, inspect test results, add examples, retrain, and answer why testing on
-  different images matters. Do not require perfect accuracy.
-
-  Physical guide
-
-  Repeat the activity with colored cards or blocks and a webcam or robot camera. No actuator
-  integration is needed to reproduce the classification experiment.
-
-  ## 3. Application architecture and interfaces
-
-  Shared lesson interface
-
-  Each screen contains:
-
-  - A short instruction and stage indicator.
-  - A simulation or image workspace.
-  - Only the controls needed for the current step.
-  - Run, Reset, and Compare actions where relevant.
-  - A compact result explanation and optional technical details.
-
-  Use visible text labels alongside colors, keyboard-accessible controls, and readable charts.
-  Target laptop screens at 1280×720 and above; smaller screens remain usable through stacking.
-
-  Simulation and visualization
-
-  - Python owns simulation state and experiment timing.
-  - Send named body transforms, ball/paddle state, and lesson metrics to the browser at up to 20
-    Hz.
-
-  - Three.js interpolates rendering between updates; it does not calculate contacts or scoring.
-  - Load the supplied robot meshes once, preserving names, transforms, and scale.
-  - Validate coordinates by comparing known body poses against MuJoCo.
-  - RL training runs without rendering; short policy demonstrations use a separate environment.
-
-  Minimum service interfaces
-
-   Interface                           Responsibility
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   GET /api/lessons                    Lesson definitions and stages
-  ──────────────────────────────────  ───────────────────────────────────────────────────────────
-   POST /api/sessions                  Create or restore a local learner session
-  ──────────────────────────────────  ───────────────────────────────────────────────────────────
-   POST /api/sessions/{id}/commands    Start/reset experiments, apply bounded lesson settings,
-                                       advance stages
-  ──────────────────────────────────  ───────────────────────────────────────────────────────────
-   WS /api/sessions/{id}/events        State updates, measurements, progress, results, and
-                                       errors
-  ──────────────────────────────────  ───────────────────────────────────────────────────────────
-   POST /api/jobs                      Start RL training/evaluation or vision training
-  ──────────────────────────────────  ───────────────────────────────────────────────────────────
-   GET /api/jobs/{id}                  Retrieve authoritative job status and results
-  ──────────────────────────────────  ───────────────────────────────────────────────────────────
-   POST /api/jobs/{id}/cancel          Cancel an active job
-  ──────────────────────────────────  ───────────────────────────────────────────────────────────
-   POST /api/vision/predict            Classify an uploaded or webcam crop
-
-  Use shared typed definitions for lesson progress, experiment configuration, metrics, and job
-  state. Job states are queued, running, completed, cancelled, and failed.
-
-  Execution and persistence
-
-  - Run model training in a worker process so the UI and API remain responsive.
-  - Allow only one training job at a time; explain when the slot is occupied.
-  - Store experiments in unique directories with configuration, seed, task version, checkpoint
-    lineage, and metrics.
-
-  - Register bundled RL checkpoints with task compatibility and checksums.
-  - Never overwrite existing training runs or silently load an incompatible policy.
-  - Browser reload restores progress and reconnects to an active job.
-  - Server restart marks interrupted jobs accordingly; restarting an experiment creates a new
-    run.
-
-  - Bind the service to localhost and serve frontend/API from the same origin.
-
-  ## 4. Ordered implementation and acceptance gates
-
-   Milestone               1. Verify the foundation
-   Deliverable             Run existing tests; check available checkpoints; benchmark training
-                           throughput; verify robot mesh loading
-   Gate before continuing  Existing behavior understood, missing assets identified, reference
-                           artifacts reproducible
-  ───────────────────────────────────────────────────────────────────────────────────────────────
-   Milestone               2. Build the application shell
-   Deliverable             Local launcher, three module entries, lesson navigation, service
-                           connection, progress persistence
-   Gate before continuing  Open, navigate, reset, reload, and reconnect successfully
-  ───────────────────────────────────────────────────────────────────────────────────────────────
-   Milestone               3. Complete PID
-   Deliverable             Dedicated environment, calibrated presets, sliders, graphs,
-                           comparison, physical guide
-   Gate before continuing  Automated trials demonstrate weak correction, overshoot, damping, and
-                           persistent-error correction
-  ───────────────────────────────────────────────────────────────────────────────────────────────
-   Milestone               4. Complete RL
-   Deliverable             Five-stage workflow, reward presets, worker jobs, reference policies,
-                           evaluation
-   Gate before continuing  A real training run completes or cancels correctly; results and
-                           checkpoint provenance are accurate
-  ───────────────────────────────────────────────────────────────────────────────────────────────
-   Milestone               5. Complete vision
-   Deliverable             Labeling, training, test comparison, upload/webcam, physical guide
-   Gate before continuing  Changing labels affects the trained model; test images remain outside
-                           training
-  ───────────────────────────────────────────────────────────────────────────────────────────────
-   Milestone               6. Classroom validation
-   Deliverable             Full walkthrough, teacher instructions, packaging, student playtest
-   Gate before continuing  All three lessons work from a clean installation without development
-                           tools in the student flow
-
-  Use game-development skills narrowly: gameplay guidance for interaction loops, UI guidance for
-  lesson clarity, and QA guidance for browser verification. Inspect relevant awesome-gamedev-
-  agent-skills instructions before implementation; avoid installing the entire collection or
-  introducing generated assets when the supplied robot and simple teaching visuals suffice.
-
-  Verification
-
-  - Preserve and run the existing physics/environment test suite.
-  - Test PID reset behavior, saturation, anti-windup, and reproducible disturbance responses.
-  - Test that changing RL rewards changes reward accounting without changing physical outcome
-    scoring.
-    restoration.
-
-  - Test vision training with changed labels, missing classes, invalid images, and denied camera
-    access.
-
-  - Exercise all three full lesson paths in a browser, including resets and reloads.
-  - Verify rendered robot motion matches authoritative simulation state.
-  - Check API responsiveness during training and record training duration on the target laptop.
-  - Complete an offline-after-installation walkthrough using bundled assets.
-  - Pilot with five representative students under adult guidance. Target at least four completing
-    each module with no more than two navigation interventions and correctly answering its final
-    concept question.
-
-  ## 5. Explicit defaults and release boundaries
-
-  - English language; guided ages 10–13.
-  - Three modules only; no additional mission concepts.
-  - PID stability means forward-position regulation on supported wheels.
-  - RL teaches task → observations/actions → rewards → training → evaluation.
-  - Short training may fail to improve; genuine results remain part of the lesson.
-  - Vision recognizes three colors in a centered object crop.
-  - Local browser delivery, local data, no hosted classroom infrastructure.
-  - Physical reproduction guides are included; live robot integration is deferred.
-  - Release requires working educational interactions and verified experiments, not a strong
-    full-court ping-pong opponent.
+# Bracket Pong
+
+An actual MuJoCo + Gymnasium + PPO starting point for training the supplied
+BracketBot to return table-tennis balls. The original asset bundle remains in
+`chopped_urdf_v2/`. The project roadmap and acceptance gates are in [PLAN.md](PLAN.md);
+the learning-lab product spec is in [docs/LEARNING_LAB_SPEC.md](docs/LEARNING_LAB_SPEC.md).
+
+## BracketBot Learning Lab
+
+The local browser lab introduces robotics through three guided activities for
+ages 10–13: PID position control, the five stages of training a ping-pong RL
+model, and three-color visual classification.
+
+```sh
+uv sync --locked
+cd web && npm install && npm run build && cd ..
+.venv/bin/python -m bracket_pong.education
+```
+
+Open <http://127.0.0.1:8080>. Experiments and model training stay on the local
+computer. See [the classroom and physical activity guide](docs/CLASSROOM_LABS.md)
+for teaching notes and the requirements for reproducing each activity safely on
+real hardware.
+
+With the server running, `cd web && npm run verify:visual` drives every lesson in
+headless Chrome: PID challenge gate, all 18 vision labels through custom-color
+prediction, a real 10,240-step RL job with stop/reload/resume, reload
+persistence, concept checks, and a mobile layout check. Screenshots and
+`report.json` land in `artifacts/learning-lab-qa/`. Student RL checkpoints are
+written to `lesson_runs/` (git-ignored).
+
+## Play a rally match
+
+The default window now lets you play with a mouse-controlled physical paddle,
+against the robot's arm, lift and wheel-driven chassis controller:
+
+```sh
+.venv/bin/python -m bracket_pong.play
+```
+
+Move the mouse to position the blue paddle; click to swing. Use **[ / ]** to
+decrease/increase swing power. Right-drag orbits the view during play, scroll
+zooms, and C resets the camera. Camera dragging leaves the paddle in place.
+Space serves or
+starts the next point. Esc pauses, R replays the last point, N starts a new
+match, and Q quits. Matches are first to 11, win by two. Keys 1–3 select
+available checkpoints between points, not calibrated difficulty levels.
+Add `--record-stats artifacts/my-playtest.json` to save local point outcomes
+on exit, or `--model runs/my-wheels/best_model.zip` to select a wheels-v2 policy.
+Without a compatible checkpoint the match uses the analytic baseline controller.
+The supplied default is now **Trained wheel RL**, selected through
+`runs/wheels-default.json`. It legally returned 67/100 held-out human serves
+versus 16/100 for the baseline; this is not a full-court coverage result.
+Restart an already-open window to load the new policy.
+
+This is a working experimental game, **not yet a robust full-court opponent**.
+See [RALLY_STATUS.md](RALLY_STATUS.md) for measurements and remaining work,
+and [RALLY_ROBUSTNESS_PLAN.md](RALLY_ROBUSTNESS_PLAN.md) for acceptance gates.
+The default match uses a free chassis, independent torque-limited wheel drives,
+and tire/ground contact. It turns before driving sideways across the court;
+it cannot command lateral sliding. Wheel dimensions follow the CAD assembly,
+but mass, motors, traction and passive spherical supports are surrogate physics,
+not calibrated real-hardware specifications. Target placement is limited to
+±0.45 m laterally; unlike the old joint limit this is a controller workspace.
+Old slider checkpoints are incompatible with the expanded chassis observation.
+The policy learns eight residual corrections around an interception/IK
+controller; it is not an end-to-end wheel-and-arm policy.
+
+Train and evaluate the new task (use fresh output paths):
+
+```sh
+.venv/bin/python -m bracket_pong.train_rally --mobile --output runs/my-wheels --seed 3 --steps 300000
+.venv/bin/python -m bracket_pong.evaluate_rally --mobile --model runs/my-wheels/best_model.zip --output artifacts/my-wheels-coverage.json --per-cell 20
+.venv/bin/python -m bracket_pong.train_rally --mobile --output runs/my-long-wheels --resume runs/my-wheels/best_model.zip --rallies --steps 300000
+```
+
+For live-play training, include real serves rather than training only on
+post-bounce feeds:
+
+```sh
+.venv/bin/python -m bracket_pong.train_rally --mobile --rallies --serve-fraction 0.85 --output runs/my-match-policy --steps 300000
+.venv/bin/python -m bracket_pong.evaluate_match --model runs/my-match-policy/best_model.zip --output artifacts/my-match-evaluation.json
+```
+
+This benchmark starts with legal human serves and plays out the same physical
+ball against five scripted paddle styles. It reports legal-return rate, robot
+point wins and rally length; feed coverage alone does not establish play quality.
+
+Evaluation uses a fixed wider benchmark, not the old narrow-shot settings.
+Omitting `--mobile` retains the older slider task for reproducibility only.
+JSON episode records and an HTML 5×5 coverage heatmap are saved together.
+Use `--rallies` for point-win evaluation against scripted opponents;
+without it, success means one legal robot return.
+
+## Legacy shot challenge
+
+The remaining sections describe the original fixed-base training task.
+
+From this directory, open the interactive window:
+
+```sh
+.venv/bin/python -m bracket_pong.play --legacy
+```
+
+Use ordinary Python for this custom GLFW window, including on macOS. The older
+passive viewer below still uses `mjpython`. The game automatically loads the new
+lift-enabled policy, or falls back to the old arm policy with manual lift only.
+
+| Control | Action |
+| --- | --- |
+| Drag in the aim pad / arrow keys | Set lateral and vertical shot offset |
+| Speed slider / + and - | Set incoming horizontal speed, 1.5–5 m/s |
+| Space / Launch shot button | Launch one shot |
+| Lift button / L | Switch automatic or manual right-arm lift |
+| Lift slider / U and J | Move the carriage up/down manually |
+| P | Pause/resume the shot |
+| R | Reset the scoreboard and prepare a new shot |
+| Right mouse drag / scroll | Orbit camera / zoom |
+| Escape / close window | Quit |
+
+The robot scores for a successful return; you score if it misses, hits the net,
+or returns onto its own side. Shot settings are locked while a ball is in flight.
+This remains a launcher challenge, not a human paddle or full table-tennis match.
+Start near the center at 2.8 m/s. The aim pad deliberately allows harder shots
+outside the training distribution. Lowering the lift far enough puts the paddle
+below the table; the full manual travel is for mechanism exploration.
+
+The new policy controls the six arm joints **and the right-arm carriage**. It
+trained for another 300,032 steps on ±6 cm target spread and 2.3–3.5 m/s feeds,
+and returned 466/500 unseen shots (93.2%). Its automatic action covers the top
+20 cm of carriage travel; manual mode exposes the full 1.03044 m. Left lift and
+wheels remain fixed. The old 99.6% result below used easier feeds and is not a
+direct comparison. Checkpoint: `runs/ppo-lift-300k/best_model.zip`.
+
+To repeat the interactive control/screenshot check:
+
+```sh
+.venv/bin/python -m bracket_pong.play --legacy --self-test artifacts/play-test
+```
+
+## Current status
+
+The original 50 visual meshes and URDF link transforms are imported. Six right-arm
+joints use force-limited position actuators. A paddle is attached to `right_eef`;
+the table, net, floor and ball use MuJoCo contacts. Seeded feeds, hit/return
+scoring, PPO training, checkpoint loading, evaluation and native preview work.
+
+A first PPO policy is now trained for the starter return challenge. After
+400,384 total training steps, the best validation checkpoint returned **498/500
+unseen starter shots (99.6%)**, versus 0/500 for a stationary paddle. With feed
+spread widened from ±2.5 cm to ±10 cm, it returned 282/500 (56.4%). This is one
+training seed in the simplified simulator, not evidence of full match play or
+hardware transfer. See [TRAINING.md](TRAINING.md) for the evaluation record.
+
+Watch the trained policy on macOS:
+
+```sh
+.venv/bin/mjpython -m bracket_pong.demo --model runs/ppo-continued-300k/best_model.zip
+```
+
+A recorded successful episode is available locally at
+`artifacts/trained-return.gif`. Models and recordings are ignored by git and
+must be copied separately if moving the demo to another machine.
+
+## Setup
+
+From this directory, with [uv](https://docs.astral.sh/uv/):
+
+```sh
+uv sync --locked
+```
+
+Python 3.12 is used for the initial installation. `uv.lock` records the resolved
+dependencies. CPU training works on macOS and can also run on Linux/Windows;
+the NVIDIA GPU is not required for this small initial policy.
+
+## View
+
+On macOS, the interactive viewer must use MuJoCo's Python launcher:
+
+```sh
+.venv/bin/mjpython -m bracket_pong.demo
+```
+
+On Linux use `.venv/bin/python`; on Windows use `.venv\Scripts\python.exe`.
+Close the viewer window to stop. The default preview explicitly uses zero
+actions and repeatedly launches balls; it is not a learned demonstration.
+
+Save a still image without opening the interactive viewer:
+
+```sh
+.venv/bin/python -m bracket_pong.demo --snapshot artifacts/scene.png
+```
+
+Rendering requires an available graphics context. Headless training and tests
+do not render.
+
+## Validate, train, evaluate
+
+```sh
+.venv/bin/python -m pytest -q
+.venv/bin/python -m bracket_pong.evaluate --policy zero --episodes 100
+.venv/bin/python -m bracket_pong.evaluate --policy random --episodes 100
+.venv/bin/python -m bracket_pong.train --steps 2048 --envs 2 --output runs/my-smoke
+.venv/bin/python -m bracket_pong.evaluate --policy ppo --model runs/my-smoke/policy.zip --episodes 100
+.venv/bin/mjpython -m bracket_pong.demo --model runs/my-smoke/policy.zip
+```
+
+Use a fresh output directory for each training run; existing runs are never
+overwritten. Each run saves `run.json`, monitor CSVs, and `policy.zip`; longer
+runs also save intermediate checkpoints. Evaluation loads the run's task
+configuration. Default evaluation seeds start at 10,000, separate from default
+training seeds. `--spread` can widen the feed distribution in training/evaluation.
+
+Longer training is available with `--steps 1000000`, but first establish a
+successful control baseline so training is not wasted on an impossible task.
+PPO may round the requested steps up to a rollout boundary; the actual count
+is recorded in `run.json`.
+
+Continue a saved policy into a fresh run (steps are additional):
+
+```sh
+.venv/bin/python -m bracket_pong.train --steps 300000 --envs 4 --resume runs/ppo-first-100k/policy.zip --output runs/my-continuation
+```
+
+Training now records `progress.csv` and evaluates 50 episodes every 25,000 steps
+using a separate validation environment seeded at 5,000. `best_model.zip` is
+selected by validation reward; `policy.zip` is the final checkpoint. Always
+check held-out return rate as well as reward. `evaluations.npz` stores validation
+history. Use `--output path.json` on the evaluation command to save metrics.
+
+## Task contract
+
+- Observations (32 floats): six joint positions and velocities, ball position
+  and linear velocity, paddle position and normal, previous action, hit flag,
+  and elapsed fraction. Spin and aerodynamic effects are not modeled yet.
+- Lift-enabled environments append carriage position, velocity and previous
+  lift action (35 floats total); action seven commands carriage displacement.
+- Actions (6 floats in [-1, 1]): target joint offsets, scaled by 0.5 radians
+  around the IK ready pose and clamped to the source joint limits.
+- Physics timestep: 1 ms; actions every 20 ms. Reset settles the arm before
+  generating a feed, then advances only through the physics engine.
+- Reward: +2 once for actual paddle contact; +10 for the subsequent first
+  table contact on the far side; penalties for misses, own-side landings,
+  net contact, action magnitude and abrupt action changes.
+- Success: ball touched the paddle, then first touched the far table half.
+  Touching the net ends the episode (a simplified return challenge rule).
+- Starter feed begins on the near half, approximating the flight after a
+  bounce. It is not yet an official serve or a full cross-net incoming shot.
+
+## Physical assumptions
+
+The source CAD inertias have suspiciously small masses and no collision shapes.
+The importer therefore preserves geometry and kinematics while assigning
+explicit surrogate inertia to moving links (0.3 kg, diagonal 0.002 kg m²),
+and a 0.2 kg paddle/handle. These are not calibrated hardware parameters.
+The base, other arm and fingers are fixed at zero joint displacement. Legacy
+arm-only environments also fix the carriage. Lift-enabled environments use a
+surrogate 0.5 kg carriage, 200 N force limit and position servo; these values
+are simulation choices, not measured hardware specifications.
+Robot meshes are visual-only: arm/table and self-collision are not yet checked.
+Joint force is limited to ±10 Nm; actual velocity limits are not yet enforced.
+Material contact parameters are an approximation and need broader calibration.
+
+Tests cover all link frames against independent URDF forward kinematics,
+table-bounce timestep sensitivity, deterministic episodes, contact-dependent
+hit credit, landing-side scoring, timeouts and the SB3 environment contract.
+Passing these checks does not establish sim-to-real accuracy or trained skill.

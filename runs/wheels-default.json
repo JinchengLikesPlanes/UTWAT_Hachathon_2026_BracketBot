@@ -1,0 +1,9 @@
+{
+  "label": "Trained wheel RL",
+  "checkpoint": "runs/rally-wheels-match-candidate0/checkpoints/rl_model_150000_steps.zip",
+  "sha256": "0cb1709ff15470936e936f499e9ad4d1d9662473db9c4056b31b9b71c96ab614",
+  "selection_report": "artifacts/wheels-match-checkpoint150k.json",
+  "holdout_report": "artifacts/wheels-match-holdout-selected.json",
+  "baseline_report": "artifacts/wheels-match-holdout-baseline.json",
+  "selection_criterion": "Legal human-serve return rate, with rally length as secondary criterion, on development seed 81234. Holdout seed 92345 was evaluated after selection."
+}

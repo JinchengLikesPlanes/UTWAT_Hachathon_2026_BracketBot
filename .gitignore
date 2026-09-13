@@ -1,0 +1,34 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.DS_Store
+MUJOCO_LOG.TXT
+graphify-out/
+
+# Experiment outputs (regenerate with the train/evaluate commands in README.md)
+artifacts/
+lesson_runs/
+runs/*
+# ...except the checkpoints the app loads at runtime
+!runs/wheels-default.json
+!runs/ppo-first-100k/
+runs/ppo-first-100k/*
+!runs/ppo-first-100k/checkpoints/
+runs/ppo-first-100k/checkpoints/*
+!runs/ppo-first-100k/checkpoints/rl_model_10000_steps.zip
+!runs/ppo-continued-300k/
+runs/ppo-continued-300k/*
+!runs/ppo-continued-300k/best_model.zip
+!runs/ppo-lift-300k/
+runs/ppo-lift-300k/*
+!runs/ppo-lift-300k/best_model.zip
+!runs/rally-wheels-match-candidate0/
+runs/rally-wheels-match-candidate0/*
+!runs/rally-wheels-match-candidate0/checkpoints/
+runs/rally-wheels-match-candidate0/checkpoints/*
+!runs/rally-wheels-match-candidate0/checkpoints/rl_model_150000_steps.zip
+
+# Frontend build output
+web/node_modules/
+web/dist/
+web/tsconfig.tsbuildinfo
