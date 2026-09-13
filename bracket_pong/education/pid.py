@@ -28,6 +28,9 @@ def run_pid_experiment(gains: PIDGains, disturbance: str = "push", seconds: floa
         raise ValueError("PID gains are outside the lesson limits")
 
     sim = RallySim(mobile=True)
+    # The lab pushes along x, so the chassis must face +x with its wheels free to roll.
+    sim.rest_heading, sim.rest_base = 0.0, 0.0
+    sim.reset()
     target = float(sim.data.qpos[sim.cq])
     body_id = sim.model.body("robot_mount").id
     wheel_radius = 0.0846

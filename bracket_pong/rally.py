@@ -47,6 +47,17 @@ class MotionLimit:
 
 class RallySim:
     dt = 0.02
+    # Chassis controller. paddle_offset is the paddle site's y relative to the
+    # chassis at the ready pose; base_range and base_speed bound the drive.
+    # The ready stance is side-on (heading +90 deg, parked at y=+0.10): a
+    # differential drive turns at ~45 deg/s, so facing the table it could
+    # never reach a wide ball in time. Side-on, lateral moves are straight
+    # driving. Measured with evaluate_rally: worst column 0.00 -> 0.24.
+    paddle_offset = 0.08
+    base_range = 0.45
+    base_speed = 0.55
+    rest_base = 0.10
+    rest_heading = np.pi/2
 
     def __init__(self, mobile=False):
         self.mobile = mobile
@@ -93,6 +104,10 @@ class RallySim:
         self.data.ctrl[self.aids] = self.ready
         self.data.qpos[self.hq] = [1.55, 0, 1.1, 0, 0]
         self.data.ctrl[self.ha] = self.data.qpos[self.hq]
+        if self.mobile:
+            # Ready stance: the chassis starts parked where it idles between points.
+            self.data.qpos[self.cq+1] = self.rest_base
+            self.data.qpos[self.cq+3:self.cq+7] = [np.cos(self.rest_heading/2), 0, 0, np.sin(self.rest_heading/2)]
         self.ball[:] = [0.9, 0, 1.25]
         self.data.qpos[self.bq+3:self.bq+7] = [1, 0, 0, 0]
         self.base_command = 0.0
@@ -154,10 +169,10 @@ class RallySim:
             target[2] = np.clip(target[2], 0.87, 1.43)
             normal[2] += 0.25*action[3]
             normal /= np.linalg.norm(normal)
-            desired_base = np.clip(p[1]+0.08+action[7]*0.2, -0.45, 0.45)
+            desired_base = np.clip(p[1]+self.paddle_offset+action[7]*0.2, -self.base_range, self.base_range)
             lift = np.clip((p[2]-1.1)*0.4+action[6]*0.12, -0.3, 0)
         else:
-            desired_base, lift = 0, -0.02
+            desired_base, lift = self.rest_base, -0.02
             target = np.array([-1.40, self.data.qpos[self.baseq]-0.10, 1.08])
             normal = np.array([0.96, 0, 0.28])
         self.data.ctrl[self.la] = lift
@@ -190,7 +205,7 @@ class RallySim:
         position = self.data.qpos[self.cq:self.cq+3]
         matrix = self.data.xmat[self.model.body("robot_mount").id].reshape(3,3)
         heading = np.arctan2(matrix[1,0], matrix[0,0])
-        delta = np.array([np.clip(x,-1.95,-1.60), np.clip(y,-.45,.45)])-position[:2]
+        delta = np.array([np.clip(x,-1.95,-1.60), np.clip(y,-self.base_range,self.base_range)])-position[:2]
         distance = np.linalg.norm(delta)
         error = (np.arctan2(delta[1],delta[0])-heading+np.pi)%(2*np.pi)-np.pi
         direction = 1
@@ -198,8 +213,8 @@ class RallySim:
             direction = -1
             error = (error+np.pi+np.pi)%(2*np.pi)-np.pi
         if distance<.035:
-            error = ( -heading+np.pi)%(2*np.pi)-np.pi
-        speed = direction*min(.55,1.8*distance) if distance>=.035 and abs(error)<.20 else 0
+            error = (self.rest_heading-heading+np.pi)%(2*np.pi)-np.pi
+        speed = direction*min(self.base_speed,1.8*distance) if distance>=.035 and abs(error)<.20 else 0
         turn = np.clip(3*error,-2,2)
         commands = np.array([speed-turn*.16108, speed+turn*.16108])/.0846
         if not self.base_enabled:
