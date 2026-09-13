@@ -126,8 +126,9 @@ node game/tests/browser.mjs          # full flow in headless Chrome, server must
 
 ## Website (Vercel)
 
-The public site is static: `site/` is the homepage (the silhouette hero plus the interactive
-Bench Shift, in `site/index.html` and `site/media/`), and the game is served from it at `/demo/`.
+The public site is static: `site/` is the homepage (the duobotics landing page with the
+silhouette hero, in `site/index.html` and `site/media/`), and the game is served from it at
+`/demo/`; every "Try a lesson" / "Start unit 01" button opens it.
 `scripts/build-site.sh` assembles both into `dist/`; `vercel.json` runs it and serves `dist/`
 (no framework, no install step), and `.vercelignore` uploads only `site/`, `game/` and `scripts/`.
 
