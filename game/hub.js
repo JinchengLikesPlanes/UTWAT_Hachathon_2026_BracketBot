@@ -5,13 +5,16 @@ import { resetState, defaultState, saveState } from './state.js'
 import { audio } from './audio.js'
 import { STEPS } from './levels/common.js'
 
-const ORDER = ['pid', 'rl', 'vision']
+const ORDER = ['pid', 'vision', 'rl']
 
 export function showHub(app) {
   const { state, ui } = app
   ui.replaceChildren()
   const root = el('div', 'hub map')
   root.append(el('h1', '', STR.hub.title), el('p', 'sub', STR.hub.subtitle))
+  const mission = el('div', 'mission')
+  STR.hub.mission.forEach(t => mission.append(el('span', 'chip', t)))
+  root.append(mission)
   const path = el('div', 'path')
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
   svg.setAttribute('class', 'trail')

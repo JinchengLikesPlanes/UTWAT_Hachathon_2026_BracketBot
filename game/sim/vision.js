@@ -10,7 +10,7 @@ import { G, NET_X, NET_H, TABLE_LEN, E_TABLE, F_TABLE, DT, makeServe } from './r
 export const TABLE_H = 0.76
 export const BALL_R = 0.02
 export const BALL_HUE = 24                  // orange ball; shading moves the hue ±9
-export const CAM = { W: 160, H: 120, fovDeg: 50, x: -0.45, y: 0.62, pitch: 0.2, fps: 30 }   // head camera: pitched 0.2 rad down
+export const CAM = { W: 160, H: 120, fovDeg: 50, x: -0.45, y: 0.815, pitch: 0.35, fps: 30 }   // the camera cover on the head: 1.575 m up, nodded 0.35 rad down
 export const F = (CAM.H / 2) / Math.tan(CAM.fovDeg * Math.PI / 360)   // focal length in pixels
 export const DEPTH_NOISE = 0.008            // 1 σ, metres — a small stereo depth camera
 export const DECIDE_X = 1.0                 // the arm must be told where to go once the ball is this close (m)

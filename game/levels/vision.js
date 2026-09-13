@@ -1,195 +1,265 @@
-// Level 3 — Robot Eyes. Procedural photos, a real softmax classifier trained from the player's labels.
+// Level 2 — See the Ball. The head depth camera watches real serves; the player builds the tracking
+// pipeline setting by setting (colour width → depth → frame gap + bounce rule) and passes an exam.
+// Everything shown in the two camera views is exactly what sim/vision.js analysed.
 import { STR } from '../strings.js'
-import { el, button, panel, metrics, feedback, popup } from '../ui.js'
+import { el, button, panel, metrics, feedback, choice, graph, popup } from '../ui.js'
 import * as V from '../sim/vision.js'
 import { makeSpinner } from '../robot.js'
 import { mountLevel, advance, conceptCheck, badgeScreen } from './common.js'
 import { audio } from '../audio.js'
+import { buildTable, TABLE_H } from './table.js'
 
 const S = () => STR.vision
-const PHOTO = 96
+const CAM_OFFSET_X = 0.055          // camera cover centre, forward of the robot origin (measured from the URDF meshes)
+const HEAD = 'head__head__head__head'
+const TEACH_SERVE = 1, GAP_SERVE = 28   // serves whose numbers make each lesson visible
+const PLAY_SPEED = 0.4              // playback slow-down so 30 fps frames can be watched
 
 export async function showLevel(app) {
   const { THREE, view, robot, state } = app
   const lv = state.levels.vision
+  lv.width ??= 30; lv.mode ??= null; lv.gap ??= 1; lv.bounceRule ??= false
   const L = mountLevel(app, 'vision', S().title)
-  const sets = V.makeSets(11)
-  app.debug = { ...(app.debug ?? {}), vision: sets }
-  const byId = new Map([...sets.train, ...sets.test, ...sets.improve].map(s => [s.id, s]))
 
-  // --- scene: a card held in front of the head camera; the head nods when a photo is picked ---
+  // --- scene: table, ball, forecast marker, camera frustum from the head ---
   const dressing = new THREE.Group()
-  const cardCanvas = document.createElement('canvas'); cardCanvas.width = cardCanvas.height = 128
-  const cardTex = new THREE.CanvasTexture(cardCanvas); cardTex.colorSpace = THREE.SRGBColorSpace
-  const card = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.42), new THREE.MeshBasicMaterial({ map: cardTex }))
-  card.position.set(0.8, 1.3, 0.55); card.rotation.y = 0.5
-  const frame = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.46), new THREE.MeshStandardMaterial({ color: 0xf2f4f8 }))
-  frame.position.copy(card.position).add(new THREE.Vector3(-0.005, 0, -0.008)); frame.rotation.copy(card.rotation)
-  dressing.add(frame, card)
+  dressing.add(buildTable(THREE, view))
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(V.BALL_R, 16, 12), new THREE.MeshStandardMaterial({ color: 0xff8c1a, emissive: 0x552200 }))
+  ball.castShadow = true; ball.visible = false
+  const marker = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.012, 0.3), new THREE.MeshBasicMaterial({ color: 0xffb547 }))
+  marker.visible = false
+  const truthRing = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.006, 8, 24), new THREE.MeshBasicMaterial({ color: 0x4ade80 }))
+  truthRing.rotation.y = Math.PI / 2; truthRing.visible = false
+  // frustum: camera eye to the four image corners at 1 m
+  const cy = TABLE_H + V.CAM.y, cp = Math.cos(V.CAM.pitch), sp = Math.sin(V.CAM.pitch)
+  const corner = (a, b) => new THREE.Vector3(V.CAM.x + (cp + b * sp), cy + (-sp + b * cp), a)
+  const ha = (V.CAM.W / 2) / V.F, hb = (V.CAM.H / 2) / V.F
+  const eye = new THREE.Vector3(V.CAM.x, cy, 0)
+  const cs = [corner(-ha, hb), corner(ha, hb), corner(ha, -hb), corner(-ha, -hb)]
+  const pts = []
+  for (let i = 0; i < 4; i++) pts.push(eye, cs[i], cs[i], cs[(i + 1) % 4])
+  const frustum = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.5 }))
+  dressing.add(ball, marker, truthRing, frustum)
   view.scene.add(dressing)
-  view.lookAt([1.9, 1.7, 2.3], [0.35, 1.15, 0], { width: 2.2, height: 1.9 })
-  const head = makeSpinner(robot, 'head__head__head__head', undefined, false)
-  let nod = 0, idleT = 0
+
+  // the robot stands so the camera cover is exactly where the sim's camera is; the head nods down by the sim's pitch
+  robot.group.position.set(V.CAM.x - CAM_OFFSET_X, 0, 0)
+  const head = makeSpinner(robot, HEAD, undefined, false)
+  view.lookAt(view.phone() ? [1.0, 1.9, 4.6] : [1.3, 1.9, 4.4], view.phone() ? [1.0, 1.0, 0] : [1.2, 1.0, 0], { width: 4.6, height: 2.2 })
+
+  // --- camera views in the panel: colour (+ detection mask) and depth ---
+  const { W, H } = V.CAM
+  function views({ mask = true } = {}) {
+    const root = el('div', 'camviews')
+    const mk = label => { const w = el('div', 'camview'); const c = el('canvas'); c.width = W; c.height = H; w.append(c, el('div', 'graphlabel', label)); root.append(w); return c }
+    const cc = mk(S().views.colour), dc = mk(S().views.depth)
+    const img = new ImageData(W, H), dimg = new ImageData(W, H)
+    root.show = fr => {
+      if (!fr) { for (const c of [cc, dc]) c.getContext('2d').clearRect(0, 0, W, H); return }
+      img.data.set(fr.rgb)
+      if (mask && fr.mask) for (let i = 0; i < W * H; i++) if (fr.mask[i]) { img.data[i * 4] = 60; img.data[i * 4 + 1] = 240; img.data[i * 4 + 2] = 120 }
+      const ctx = cc.getContext('2d'); ctx.putImageData(img, 0, 0)
+      if (mask && fr.found) { ctx.strokeStyle = '#ffb547'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(fr.u - 4, fr.v + 0.5); ctx.lineTo(fr.u + 5, fr.v + 0.5); ctx.moveTo(fr.u + 0.5, fr.v - 4); ctx.lineTo(fr.u + 0.5, fr.v + 5); ctx.stroke() }
+      for (let i = 0; i < W * H; i++) { const g = Math.max(0, Math.min(255, 255 * (1 - (fr.depth[i] - 0.3) / 3.7))); dimg.data[i * 4] = dimg.data[i * 4 + 1] = dimg.data[i * 4 + 2] = g; dimg.data[i * 4 + 3] = 255 }
+      dc.getContext('2d').putImageData(dimg, 0, 0)
+    }
+    return root
+  }
+  function readout() {
+    const m = metrics(['x', 'y', 'vx', 'vy', 'pred'].map(k => ({ id: `ro-${k}`, label: S().readout[k], value: S().readout.none })))
+    m.classList.add('readout')
+    const cells = Object.fromEntries(['x', 'y', 'vx', 'vy', 'pred'].map(k => [k, m.querySelector(`[data-id=ro-${k}] .v`)]))
+    m.show = fr => {
+      const f = (v, d = 2) => v === undefined ? S().readout.none : v.toFixed(d)
+      cells.x.textContent = f(fr?.x); cells.y.textContent = f(fr?.y); cells.vx.textContent = f(fr?.vx, 1); cells.vy.textContent = f(fr?.vy, 1)
+      cells.pred.textContent = fr?.pred === undefined ? S().readout.none : (fr.pred * 100).toFixed(0)
+    }
+    return m
+  }
+
+  // --- playback of a tracked serve ---
+  let play = null, idleT = 0
   app.tick = dt => {
-    nod = Math.max(0, nod - dt); idleT += dt
-    // idle: the head scans slowly, the arms breathe; a nod toward the card overrides when a photo is picked
-    const scan = 0.08 * Math.sin(idleT * 0.9) + 0.03 * Math.sin(idleT * 2.7)
-    head.setAngle(nod > 0 ? -0.25 * Math.sin(nod * Math.PI * 2) : scan)
-    robot.setJoint('rj1', 0.12 + 0.05 * Math.sin(idleT * 1.1))
-    robot.setJoint('lj1', 0.12 + 0.05 * Math.sin(idleT * 1.1 + 2))
+    idleT += dt
+    if (!play) { head.setAngle(V.CAM.pitch + 0.04 * Math.sin(idleT * 0.8)); robot.setJoint('rj1', 0.1 + 0.04 * Math.sin(idleT * 1.1)); robot.setJoint('lj1', 0.1 + 0.04 * Math.sin(idleT * 1.1 + 2)); return }
+    head.setAngle(V.CAM.pitch)
+    play.t += dt * play.speed
+    const k = Math.min(play.r.frames.length - 1, Math.floor(play.t * V.CAM.fps))
+    if (k !== play.k) {
+      play.k = k
+      const fr = play.r.frames[k]
+      ball.position.set(fr.truth.x, TABLE_H + fr.truth.y, 0); ball.visible = true
+      if (fr.pred !== undefined) { marker.position.set(0, TABLE_H + fr.pred, 0); marker.visible = true }
+      play.onFrame?.(fr, k)
+    }
+    if (play.t >= play.r.crossT) {
+      ball.position.set(0, TABLE_H + play.r.crossY, 0)
+      truthRing.position.set(0, TABLE_H + play.r.crossY, 0); truthRing.visible = play.showTruth
+      const d = play.onDone; play = null; d?.()
+    }
   }
-  const showOnCard = s => {
-    const ctx = cardCanvas.getContext('2d')
-    if (s) V.renderSample(s, ctx, 128); else { ctx.fillStyle = '#ddd'; ctx.fillRect(0, 0, 128, 128) }
-    cardTex.needsUpdate = true; nod = 0.6
+  function playTrack(r, { speed = PLAY_SPEED, onFrame, onDone, showTruth = true } = {}) {
+    marker.visible = false; truthRing.visible = false; ball.visible = false
+    play = { r, t: 0, k: -1, speed, onFrame, onDone, showTruth }
   }
-  showOnCard(null)
-  const cleanup = () => { view.scene.remove(dressing); head.setAngle(0); app.tick = null }
+  const runServe = (n, opts) => V.track(V.serveFor(n), { ...opts, keepFrames: true }, V.rngFor(n))
+  const cleanup = () => { view.scene.remove(dressing); head.setAngle(0); robot.group.position.set(0, 0, 0); app.tick = null }
+  const teach = (text, kind, onClose) => popup({ text, kind, closeLabel: STR.common.gotIt, onClose })
+  const pct = v => Math.round(v * 100), cm = v => (v * 100).toFixed(1)
 
-  // --- state ---
-  lv.labels ??= {}
-  const labelled = ids => ids.filter(id => lv.labels[id]).map(id => ({ features: V.features(byId.get(id)), label: lv.labels[id] }))
-  const counts = ids => Object.fromEntries(V.LABELS.map(l => [l, ids.filter(id => lv.labels[id] === l).length]))
-  const scoreOn = (model, set) => set.map(s => ({ s, p: V.predict(model, V.features(s)) }))
-
-  // Photo grid. mode 'label': tap selects, label bar applies. mode 'show': read-only with tags.
-  function photoGrid(samples, { mode, tags, onSelect } = {}) {
-    const grid = el('div', 'photos')
-    const elems = new Map()
-    for (const s of samples) {
-      const ph = el('div', 'photo'); ph.dataset.id = s.id
-      const c = el('canvas'); c.width = c.height = PHOTO
-      V.renderSample(s, c.getContext('2d'), PHOTO)
-      const tag = el('div', 'tag', '')
-      ph.append(c, tag)
-      c.addEventListener('click', () => { showOnCard(s); if (mode === 'label') select(s.id); onSelect?.(s) })
-      grid.append(ph); elems.set(s.id, ph)
-    }
-    let selected = null
-    const select = id => {
-      selected = id
-      for (const [k, e] of elems) e.classList.toggle('selected', k === id)
-    }
-    const refresh = () => {
-      for (const [id, e] of elems) {
-        const t = tags?.(id)
-        e.querySelector('.tag').textContent = t?.text ?? (lv.labels[id] ? S().labels[lv.labels[id]] : '?')
-        e.classList.toggle('ok', t?.kind === 'ok'); e.classList.toggle('miss', t?.kind === 'miss')
-      }
-    }
-    refresh()
-    grid.select = select; grid.refresh = refresh; grid.selectedId = () => selected
-    grid.nextUnlabelled = () => samples.find(s => !lv.labels[s.id])?.id ?? null
-    return grid
-  }
-
-  function labelStep(ids, samples, cfg) {
-    const grid = photoGrid(samples, { mode: 'label' })
-    const bar = el('div', 'labelbar')
-    const status = el('div')
-    const next = button(STR.common.next, cfg.onNext, { primary: true, id: 'next' }); next.hidden = true
-    const update = () => {
-      const c = counts(ids), done = ids.every(id => lv.labels[id]), enough = V.LABELS.every(l => c[l] >= 2)
-      status.replaceChildren(metrics(V.LABELS.map(l => ({ id: `count-${l}`, label: S().labels[l], value: `${c[l]}` }))))
-      if (done && enough) { next.hidden = false; if (!cfg.trainAfter) audio.play('pass') }
-      else if (done && !enough) status.append(feedback(S().steps[1].needTwo, 'bad'))
-      grid.refresh()
-    }
-    for (const l of V.LABELS) bar.append(button(S().labels[l], () => {
-      const id = grid.selectedId(); if (!id) return
-      lv.labels[id] = l; app.save(); update()
-      const n = grid.nextUnlabelled(); if (n) { grid.select(n); showOnCard(byId.get(n)) }
-    }, { id: `label-${l}` }))
-    const first = grid.nextUnlabelled() ?? ids[0]
-    grid.select(first); showOnCard(byId.get(first))
-    update()
-    return panel({ title: cfg.title, lead: cfg.lead, note: cfg.note, body: [grid, bar, status], actions: [next] })
+  // A step that serves one ball, shows the camera views live, and judges the result.
+  function serveStep(n, cfg) {
+    const vw = views({ mask: cfg.mask ?? true }), ro = readout(), fb = el('div'), stats = el('div')
+    ro.hidden = cfg.readout === false
+    const next = button(STR.common.next, cfg.onNext, { primary: true, id: 'next' }); next.hidden = !cfg.passed()
+    const serve = button(S().serve, () => {
+      if (play) return
+      const opts = cfg.opts()
+      if (!opts) return
+      serve.disabled = true; fb.replaceChildren(); stats.replaceChildren(); ro.show(null)
+      const r = runServe(n, opts)
+      audio.play('click')
+      playTrack(r, {
+        onFrame: fr => { vw.show(fr); ro.show(fr); cfg.onFrame?.(fr) },
+        onDone: () => {
+          serve.disabled = false
+          ro.show(r.decision)   // the four numbers at the decision moment — what the pong brain reads
+          const v = cfg.verdict(r)
+          stats.replaceChildren(cfg.stats(r))
+          fb.replaceChildren(feedback(v.text, v.pass ? 'good' : 'bad'))
+          audio.play(v.pass ? 'pass' : 'fail')
+          if (v.pass) { cfg.onPass?.(r); next.hidden = !cfg.passed() }
+          teach(v.text, v.pass ? 'good' : 'bad')
+        },
+      })
+    }, { primary: true, id: 'serve' })
+    const body = [vw, ...(cfg.controls ?? []), ro, stats, fb]
+    const p = panel({ title: cfg.title, lead: cfg.lead, note: cfg.note, body, actions: [serve, next] })
+    p.views = vw
+    return p
   }
 
-  const trainIds = sets.train.map(s => s.id), improveIds = sets.improve.map(s => s.id)
+  // Button group that stores a setting in level state.
+  function picker(items, get, set, idPrefix) {
+    const row = el('div', 'row picks')
+    const btns = items.map(it => button(it.label, () => { set(it.value); refresh() }, { id: `${idPrefix}-${it.value}`, cls: 'small' }))
+    const refresh = () => btns.forEach((b, i) => b.classList.toggle('selected', items[i].value === get()))
+    refresh(); row.append(...btns)
+    return row
+  }
 
   const steps = {
-    1: () => labelStep(trainIds, sets.train, { title: S().steps[1].title, lead: S().steps[1].lead, note: S().steps[1].note, onNext: () => { advance(app, 'vision', 2); go(2) } }),
-    2: () => {
-      const fb = el('div')
-      const next = button(STR.common.next, () => { advance(app, 'vision', 3); go(3) }, { primary: true, id: 'next' }); next.hidden = !lv.model
-      const grid = photoGrid(sets.train, { mode: 'show' })
-      const trainBtn = button(S().steps[2].train, () => {
-        try {
-          const m = V.trainClassifier(labelled(trainIds))
-          lv.model = { weights: m.weights, bias: m.bias }; app.save()
-          const text = S().steps[2].done.replace('{acc}', Math.round(m.accuracy * 100)).replace('{n}', m.examples)
-          fb.replaceChildren(feedback(text, 'good')); popup({ text: S().steps[2].pop.replace('{acc}', Math.round(m.accuracy * 100)), kind: 'good', closeLabel: STR.common.gotIt })
-          audio.play('pass'); next.hidden = false
-        } catch (e) { fb.replaceChildren(feedback(S().steps[1].needTwo, 'bad')) }
-      }, { primary: true, id: 'train' })
-      return panel({ title: S().steps[2].title, lead: S().steps[2].lead, note: S().steps[2].note, body: [grid, fb], actions: [trainBtn, next] })
+    1: () => {
+      const q = el('div'), qc = el('div')
+      const p = serveStep(TEACH_SERVE, {
+        title: S().steps[1].title, lead: S().steps[1].lead, note: S().steps[1].note, mask: false, readout: false,
+        opts: () => ({ width: 10, mode: 'depth', gap: 3, bounceRule: true }),
+        stats: () => el('div'),
+        verdict: () => ({ pass: true, text: S().pop.twoPictures }),
+        onPass: () => {
+          if (q.children.length) return
+          // the question appears after the first serve; Next waits for the right answer
+          q.append(el('p', 'lead', S().steps[1].question))
+          const c = choice(S().steps[1].options, (i, b) => {
+            qc.replaceChildren()
+            if (i === S().steps[1].answer) { c.lock(); c.mark(i, true); qc.append(feedback(S().steps[1].correct, 'good')); audio.play('pass'); lv.sawCamera = true; app.save(); p.querySelector('[data-id=next]').hidden = false }
+            else { c.mark(i, false); b.disabled = true; qc.append(feedback(STR.common.wrong, 'bad')); audio.play('fail') }
+          }, { idPrefix: 'which' })
+          q.append(c, qc)
+        },
+        passed: () => !!lv.sawCamera,
+        onNext: () => { advance(app, 'vision', 2); go(2) },
+      })
+      p.insertBefore(q, p.actionsEl)
+      return p
     },
-    3: () => {
-      const res = scoreOn(lv.model, sets.test)
-      const byRes = new Map(res.map(r => [r.s.id, r]))
-      const grid = photoGrid(sets.test, { mode: 'show', tags: id => { const r = byRes.get(id); return { text: `${S().labels[r.p.label]} ${r.p.label === r.s.truth ? '✓' : '✗'}`, kind: r.p.label === r.s.truth ? 'ok' : 'miss' } } })
-      const per = V.LABELS.map(l => ({ id: `test-${l}`, label: S().labels[l], value: `${res.filter(r => r.s.truth === l && r.p.label === l).length}/4` }))
-      const total = res.filter(r => r.p.label === r.s.truth).length
-      lv.testBefore = total; app.save()
-      const next = button(STR.common.next, () => { advance(app, 'vision', 4); go(4) }, { primary: true, id: 'next' })
-      return panel({ title: S().steps[3].title, lead: S().steps[3].lead.replace('{n}', total), note: S().steps[3].note, body: [metrics([{ id: 'test-total', label: S().steps[3].total, value: `${total}/12` }, ...per]), grid], actions: [next] })
-    },
+    2: () => serveStep(TEACH_SERVE, {
+      title: S().steps[2].title, lead: S().steps[2].lead, note: S().steps[2].note,
+      controls: [picker(V.HUE_WIDTHS.map(w => ({ value: w, label: S().widths[w] })), () => lv.width, w => { lv.width = w; app.save() }, 'width')],
+      opts: () => ({ width: lv.width, mode: 'depth', gap: 3, bounceRule: true }),
+      stats: r => metrics([{ id: 'found', label: S().metrics.found, value: `${pct(r.foundRate)}%`, kind: r.foundRate >= 0.9 ? 'good' : 'bad' }, { id: 'px', label: S().metrics.px, value: `${r.pxErr?.toFixed(1) ?? '—'} px`, kind: r.pxErr < 1 ? 'good' : 'bad' }]),
+      verdict: r => {
+        if (r.pxErr > 1) return { pass: false, text: S().pop.table.replace('{px}', r.pxErr.toFixed(0)) }
+        if (r.foundRate < 0.9) return { pass: false, text: S().pop.lost.replace('{miss}', pct(1 - r.foundRate)) }
+        return { pass: true, text: S().pop.found.replace('{found}', pct(r.foundRate)).replace('{px}', r.pxErr.toFixed(1)) }
+      },
+      onPass: () => { lv.widthOk = true; app.save() }, passed: () => !!lv.widthOk,
+      onNext: () => { advance(app, 'vision', 3); go(3) },
+    }),
+    3: () => serveStep(TEACH_SERVE, {
+      title: S().steps[3].title, lead: S().steps[3].lead, note: S().steps[3].note,
+      controls: [picker(['size', 'depth'].map(m => ({ value: m, label: S().modes[m] })), () => lv.mode, m => { lv.mode = m; app.save() }, 'mode')],
+      opts: () => lv.mode ? { width: lv.width, mode: lv.mode, gap: 3, bounceRule: true } : null,
+      stats: r => metrics([{ id: 'pos', label: S().metrics.pos, value: `${cm(r.posErr)} cm`, kind: r.posErr <= 0.03 ? 'good' : 'bad' }]),
+      verdict: r => lv.mode === 'depth' && r.posErr <= 0.03 ? { pass: true, text: S().pop.depth.replace('{err}', cm(r.posErr)) } : { pass: false, text: S().pop.size.replace('{err}', cm(r.posErr)) },
+      onPass: () => { lv.depthOk = true; app.save() }, passed: () => !!lv.depthOk,
+      onNext: () => { advance(app, 'vision', 4); go(4) },
+    }),
     4: () => {
-      const p = labelStep(improveIds, sets.improve, { title: S().steps[4].title, lead: S().steps[4].lead, note: S().steps[4].note, trainAfter: true, onNext: () => { advance(app, 'vision', 5); go(5) } })
-      const fb = el('div')
-      const retrain = button(S().steps[4].retrain, () => {
-        try {
-          const m = V.trainClassifier(labelled([...trainIds, ...improveIds]))
-          lv.model2 = { weights: m.weights, bias: m.bias }
-          const after = scoreOn(lv.model2, sets.test).filter(r => r.p.label === r.s.truth).length
-          const hardBefore = scoreOn(lv.model, sets.improve).filter(r => r.p.label === r.s.truth).length
-          const hardAfter = scoreOn(lv.model2, sets.improve).filter(r => r.p.label === r.s.truth).length
-          lv.retrained = { testBefore: lv.testBefore, testAfter: after, hardBefore, hardAfter }; app.save()
-          fb.replaceChildren(metrics([
-            { id: 'cmp-test-before', label: S().steps[4].m.testBefore, value: `${lv.testBefore}/12` },
-            { id: 'cmp-test-after', label: S().steps[4].m.testAfter, value: `${after}/12`, kind: after >= lv.testBefore ? 'good' : 'bad' },
-            { id: 'cmp-hard-before', label: S().steps[4].m.hardBefore, value: `${hardBefore}/6` },
-            { id: 'cmp-hard-after', label: S().steps[4].m.hardAfter, value: `${hardAfter}/6`, kind: hardAfter > hardBefore ? 'good' : 'bad' },
-          ]), feedback(S().steps[4].done, 'good'))
-          popup({ text: S().steps[4].pop.replace('{tb}', lv.testBefore).replace('{ta}', after).replace('{hb}', hardBefore).replace('{ha}', hardAfter), kind: 'good', closeLabel: STR.common.gotIt })
-          audio.play('pass'); p.querySelector('[data-id=next]').hidden = false
-        } catch (e) { fb.replaceChildren(feedback(S().steps[1].needTwo, 'bad')) }
-      }, { primary: true, id: 'retrain' })
-      p.querySelector('[data-id=next]').hidden = true
-      p.insertBefore(fb, p.actionsEl)
-      p.actionsEl.prepend(retrain)
+      const gc = el('canvas', 'graph'); gc.classList.add('half')
+      const gw = el('div', 'graphwrap'); gw.append(el('div', 'graphlabel', S().graph), gc)
+      const g = graph(gc, { yRange: [0, 60], tRange: [0, 1.0], yLines: [20, 40] })
+      let pts = []
+      const crossY = V.flight(V.serveFor(GAP_SERVE)).crossY * 100
+      const bounceBtn = button('', () => { lv.bounceRule = !lv.bounceRule; app.save(); bounceBtn.textContent = S().bounce[lv.bounceRule ? 'on' : 'off']; bounceBtn.classList.toggle('selected', lv.bounceRule) }, { id: 'bounce', cls: 'small' })
+      bounceBtn.textContent = S().bounce[lv.bounceRule ? 'on' : 'off']; bounceBtn.classList.toggle('selected', lv.bounceRule)
+      const gapRow = picker(V.GAPS.map(n => ({ value: n, label: S().gaps[n] })), () => lv.gap, n => { lv.gap = n; app.save() }, 'gap')
+      gapRow.append(bounceBtn)
+      const p = serveStep(GAP_SERVE, {
+        title: S().steps[4].title, lead: S().steps[4].lead, note: S().steps[4].note,
+        controls: [gapRow, gw],
+        opts: () => { pts = []; g.draw([]); return { width: lv.width, mode: 'depth', gap: lv.gap, bounceRule: lv.bounceRule } },
+        onFrame: fr => { if (fr.pred !== undefined) pts.push({ t: fr.t, y: fr.pred * 100 }); g.draw([{ points: [{ t: 0, y: crossY }, { t: 1, y: crossY }], color: '#4ade80', width: 1 }, { points: pts, color: '#ffb547' }]) },
+        stats: r => metrics([
+          { id: 'pred', label: S().metrics.pred, value: r.decision ? `${cm(r.decision.err)} cm` : '—', kind: r.hit ? 'good' : 'bad' },
+          { id: 'when', label: S().metrics.when, value: r.decision ? S().metrics.early.replace('{t}', (r.crossT - r.decision.t).toFixed(2)) : S().metrics.late, kind: r.decision ? 'good' : 'bad' },
+          { id: 'vel', label: S().metrics.vel, value: r.velErr === null ? '—' : `${r.velErr.toFixed(2)} m/s` },
+        ]),
+        verdict: r => {
+          if (!r.decision) return { pass: false, text: S().pop.late }
+          if (r.hit) return { pass: true, text: S().pop.good.replace('{err}', cm(r.decision.err)).replace('{t}', (r.crossT - r.decision.t).toFixed(2)) }
+          const straddled = r.frames[r.decision.k]?.bounceInWindow
+          return { pass: false, text: (straddled || !lv.bounceRule ? S().pop.bounce : S().pop.noisy).replace('{err}', cm(r.decision.err)) }
+        },
+        onPass: () => { lv.gapOk = true; app.save() }, passed: () => !!lv.gapOk,
+        onNext: () => { advance(app, 'vision', 5); go(5) },
+      })
       return p
     },
     5: () => {
-      const model = lv.model2 ?? lv.model
-      const input = el('input'); input.type = 'file'; input.accept = 'image/*'; input.setAttribute('capture', 'environment'); input.dataset.id = 'photo'; input.hidden = true
-      const pick = button(S().steps[5].pick, () => input.click(), { primary: true, id: 'pick' })
-      const preview = el('canvas', 'preview'); preview.width = preview.height = 160; preview.hidden = true
-      const fb = el('div')
-      const next = button(STR.common.next, () => go(6), { primary: true, id: 'next' }); next.hidden = true
-      input.addEventListener('change', async () => {
-        const file = input.files?.[0]; if (!file) return
-        try {
-          const bmp = await createImageBitmap(file)
-          const ctx = preview.getContext('2d')
-          const s = Math.min(bmp.width, bmp.height)
-          ctx.drawImage(bmp, (bmp.width - s) / 2, (bmp.height - s) / 2, s, s, 0, 0, 160, 160)
-          preview.hidden = false
-          const f = V.cropFeatures(ctx, 160, 160)
-          const r = V.predict(model, f)
-          ctx.strokeStyle = '#ffb547'; ctx.lineWidth = 3; ctx.strokeRect(48, 48, 64, 64)
-          const cardCtx = cardCanvas.getContext('2d'); cardCtx.drawImage(preview, 0, 0, 128, 128); cardTex.needsUpdate = true; nod = 0.6
-          fb.replaceChildren(
-            feedback(S().steps[5].result.replace('{label}', S().labels[r.label]).replace('{pct}', Math.round(r.scores[r.label] * 100)), 'good'),
-            metrics(V.LABELS.map(l => ({ id: `score-${l}`, label: S().labels[l], value: `${Math.round(r.scores[l] * 100)}%` }))),
-            el('p', 'note', S().steps[5].caveat),
-          )
-          lv.realPhoto = r.label; app.save()
-          audio.play('pass'); next.hidden = false
-        } catch { fb.replaceChildren(feedback(S().steps[5].failed, 'bad')) }
-      })
-      return panel({ title: S().steps[5].title, lead: S().steps[5].lead, note: S().steps[5].note, body: [input, preview, fb], actions: [pick, next] })
+      const vw = views(), ro = readout(), status = el('div', 'note'), fb = el('div'), list = el('div', 'examlist')
+      const next = button(STR.common.next, () => go(6), { primary: true, id: 'next' }); next.hidden = !lv.examPassed
+      const run = button(S().steps[5].run, () => {
+        if (play) return
+        run.disabled = true; fb.replaceChildren(); list.replaceChildren(); truthRing.visible = false
+        const opts = { width: lv.width, mode: 'depth', gap: lv.gap, bounceRule: lv.bounceRule }
+        const ex = V.exam({ ...opts, keepFrames: true })
+        let i = 0, hits = 0
+        const one = () => {
+          if (i >= ex.results.length) {
+            run.disabled = false
+            lv.examHits = ex.hits; lv.examPassed = ex.pass; app.save()
+            const text = (ex.pass ? S().pop.examPass : S().pop.examFail).replace('{hits}', ex.hits)
+            fb.replaceChildren(feedback(text, ex.pass ? 'good' : 'bad')); audio.play(ex.pass ? 'badge' : 'fail')
+            if (ex.pass) next.hidden = false
+            teach(text, ex.pass ? 'good' : 'bad')
+            return
+          }
+          const r = ex.results[i]
+          status.textContent = S().steps[5].serving.replace('{n}', i + 1).replace('{hits}', hits)
+          playTrack(r, { speed: 1, onFrame: fr => { vw.show(fr); ro.show(fr) }, onDone: () => {
+            ro.show(r.decision)
+            if (r.hit) hits++
+            const line = el('div', `examline ${r.hit ? 'ok' : 'miss'}`, `${i + 1} · ` + (r.decision ? (r.hit ? S().steps[5].result : S().steps[5].miss).replace('{err}', cm(r.decision.err)) : S().steps[5].none))
+            line.dataset.id = `exam-${i}`
+            list.append(line); audio.play(r.hit ? 'hit' : 'fail')
+            i++; one()
+          } })
+        }
+        one()
+      }, { primary: true, id: 'run' })
+      const skip = button(S().skip, () => { if (play) play.speed = 30 }, { id: 'skip', cls: 'small' })
+      return panel({ title: S().steps[5].title, lead: S().steps[5].lead, note: S().steps[5].note, body: [vw, ro, status, list, fb], actions: [run, skip, next] })
     },
     6: () => conceptCheck(app, 'vision', S().concept, () => go(7)),
     7: () => badgeScreen(app, 'vision', S().badge),
@@ -197,6 +267,7 @@ export async function showLevel(app) {
 
   function go(n) {
     L.setStep(n)
+    truthRing.visible = false; marker.visible = false; ball.visible = false
     L.show(steps[n]())
   }
   go(lv.done ? 1 : Math.min(lv.step, 5))

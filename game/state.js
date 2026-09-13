@@ -8,7 +8,7 @@ export function defaultState() {
     levels: {
       pid: { step: 1, done: false, gains: { kp: 0, ki: 0, kd: 0 }, examFails: 0 },
       rl: { step: 1, done: false, preset: 'contact', policy: null },
-      vision: { step: 1, done: false, labels: {}, model: null },
+      vision: { step: 1, done: false, width: 30, mode: null, gap: 1, bounceRule: false },
     },
   }
 }

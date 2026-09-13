@@ -79,41 +79,55 @@ async function pidLevel(page, { touch = false } = {}) {
 }
 
 // A 64×64 solid-colour PNG built in the browser (no file on disk needed).
-const pngBuffer = async (page, css) => Buffer.from(await page.evaluate(async css => {
-  const c = document.createElement('canvas'); c.width = c.height = 64
-  const ctx = c.getContext('2d'); ctx.fillStyle = css; ctx.fillRect(0, 0, 64, 64)
-  const blob = await new Promise(r => c.toBlob(r, 'image/png'))
-  return [...new Uint8Array(await blob.arrayBuffer())]
-}, css))
+// Serve, fast-forward the playback, wait for the serve button to come back, dismiss the pop-up.
+const serveOnce = async page => {
+  await btn(page, 'serve').click()
+  await page.evaluate(() => { const t = window.bb.tick; for (let i = 0; i < 400; i++) t(1 / 60) })
+  await page.waitForFunction(() => !document.querySelector('button[data-id="serve"]').disabled, null, { timeout: 20000 })
+  await dismiss(page)
+}
+const fbKind = page => page.locator('.panel .feedback').last().getAttribute('data-kind')
 
 async function visionLevel(page) {
   await btn(page, 'play-vision').click()
-  await page.waitForSelector('.photos')
-  const labelAll = async () => {
-    const ids = await page.$$eval('.photos .photo', els => els.map(e => e.dataset.id))
-    const truth = await page.evaluate(() => Object.fromEntries([...window.bb.debug.vision.train, ...window.bb.debug.vision.improve].map(s => [s.id, s.truth])))
-    for (const id of ids) { await page.locator(`.photo[data-id="${id}"] canvas`).click(); await btn(page, `label-${truth[id]}`).click() }
-  }
-  await labelAll(); await nextVisible(page); await btn(page, 'next').click()
-  await btn(page, 'train').click(); await nextVisible(page); await dismiss(page)
-  ok('vision trained', await page.locator('.feedback.good').count() === 1)
-  await btn(page, 'next').click()
-  const total = await page.locator('[data-id=test-total] .v').textContent()
-  ok('vision test ≥ 10/12', +total.split('/')[0] >= 10, total)
-  await btn(page, 'next').click()
-  await labelAll(); await btn(page, 'retrain').click(); await nextVisible(page); await dismiss(page)
-  const hardAfter = await page.locator('[data-id=cmp-hard-after] .v').textContent()
-  ok('vision retrain shows comparison', /\/6/.test(hardAfter), hardAfter)
-  await btn(page, 'next').click()
-  await page.locator('input[data-id="photo"]').setInputFiles({ name: 'red.png', mimeType: 'image/png', buffer: await pngBuffer(page, '#d62828') })
-  await nextVisible(page)
-  const said = await page.locator('.feedback.good').textContent()
-  ok('vision real photo → red', /Red/.test(said), said)
-  await btn(page, 'next').click()
+  await page.waitForSelector('button[data-id="serve"]')
+  // step 1: two pictures, then the question
+  await serveOnce(page)
+  ok('vision step1 camera views drawn', await page.evaluate(() => { const c = document.querySelector('.camview canvas'); return c.getContext('2d').getImageData(80, 60, 1, 1).data[3] === 255 }))
+  await btn(page, 'which-0').click(); ok('vision step1 wrong answer', (await fbKind(page)) === 'bad')
+  await btn(page, 'which-1').click(); await nextVisible(page); await btn(page, 'next').click()
+  // step 2: colour width — too wide grabs the table, narrow loses it, medium passes
+  await page.waitForSelector('button[data-id="width-30"]')
+  await btn(page, 'width-30').click(); await serveOnce(page); ok('vision step2 wide fails', (await fbKind(page)) === 'bad')
+  await btn(page, 'width-2').click(); await serveOnce(page); ok('vision step2 narrow fails', (await fbKind(page)) === 'bad')
+  await btn(page, 'width-10').click(); await serveOnce(page); ok('vision step2 medium passes', (await fbKind(page)) === 'good')
+  await nextVisible(page); await btn(page, 'next').click()
+  // step 3: size vs depth
+  await btn(page, 'mode-size').click(); await serveOnce(page); ok('vision step3 size fails', (await fbKind(page)) === 'bad')
+  const sizeErr = parseFloat(await page.locator('[data-id=pos] .v').textContent())
+  await btn(page, 'mode-depth').click(); await serveOnce(page); ok('vision step3 depth passes', (await fbKind(page)) === 'good')
+  const depthErr = parseFloat(await page.locator('[data-id=pos] .v').textContent())
+  ok('vision step3 depth ≪ size', depthErr < 3 && sizeErr > 15, `${depthErr} vs ${sizeErr}`)
+  await nextVisible(page); await btn(page, 'next').click()
+  // step 4: gap + bounce rule
+  await btn(page, 'gap-12').click(); await serveOnce(page); ok('vision step4 gap 12 too late', (await fbKind(page)) === 'bad')
+  await btn(page, 'gap-3').click(); await serveOnce(page); ok('vision step4 no bounce rule fails', (await fbKind(page)) === 'bad')
+  await btn(page, 'bounce').click(); await serveOnce(page); ok('vision step4 gap 3 + bounce rule passes', (await fbKind(page)) === 'good')
+  ok('vision step4 forecast readout', /^\d+$/.test((await page.locator('[data-id=ro-pred] .v').textContent()).trim()))
+  await nextVisible(page); await btn(page, 'next').click()
+  // step 5: the exam
+  await btn(page, 'run').click()
+  for (let i = 0; i < 12; i++) await page.evaluate(() => { const t = window.bb.tick; for (let k = 0; k < 200; k++) t(1 / 60) })
+  await page.waitForFunction(() => !document.querySelector('button[data-id="run"]').disabled, null, { timeout: 60000 })
+  await dismiss(page)
+  ok('vision exam lists 10 serves', await page.locator('.examline').count() === 10)
+  ok('vision exam passes', (await fbKind(page)) === 'good', await page.locator('.panel .feedback').last().textContent())
+  await nextVisible(page); await btn(page, 'next').click()
   await btn(page, 'choice-1').click(); await nextVisible(page); await btn(page, 'next').click()
   await page.waitForSelector('button[data-id="to-hub"]'); await btn(page, 'to-hub').click()
   await page.reload({ waitUntil: 'commit' }); await page.waitForFunction(() => window.bb?.robot)
   ok('vision badge survives reload', (await page.locator('[data-level=vision] .progress').textContent()) === 'Badge earned')
+  ok('hub order is stand → see → play', (await page.$$eval('.node', ns => ns.map(n => n.dataset.level).join(','))) === 'pid,vision,rl')
 }
 
 const closePopup = async page => { await page.waitForSelector('[data-modal=popup]', { timeout: 60000 }); await btn(page, 'popup-close').click() }
