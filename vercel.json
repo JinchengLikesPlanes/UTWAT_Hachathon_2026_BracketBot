@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "",
+  "buildCommand": "sh scripts/build-site.sh",
+  "outputDirectory": "dist",
+  "redirects": [
+    { "source": "/demo", "destination": "/demo/", "permanent": true },
+    { "source": "/bracketbot_bench_shift.html", "destination": "/", "permanent": true }
+  ],
+  "headers": [
+    {
+      "source": "/media/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800" }]
+    }
+  ]
+}

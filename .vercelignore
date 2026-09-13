@@ -1,0 +1,9 @@
+# The deployed site is built only from site/ and game/ (scripts/build-site.sh).
+# Upload nothing else: no Python package, checkpoints, URDF meshes or node_modules.
+/*
+!/site
+!/game
+!/scripts
+!/vercel.json
+/game/tests
+/game/tools

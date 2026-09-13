@@ -63,5 +63,6 @@ cd game && zip -r ../artifacts/bracketbot-game.zip . -x '*.DS_Store' 'tests/*' '
 ```
 
 The ZIP has `index.html`, `logic.js` and `assets/` at its root, all references relative, so it
-serves from any static host or subpath. `design/deploy.json` records the Higgsfield deployment
+serves from any static host or subpath. The Vercel site serves it at `/demo/` under the homepage
+(`scripts/build-site.sh`, see [Website (Vercel)](../README.md#website-vercel)). `design/deploy.json` records the Higgsfield deployment
 once one exists (`higgsfield game deploy … --json`, then `--game-id` for updates).

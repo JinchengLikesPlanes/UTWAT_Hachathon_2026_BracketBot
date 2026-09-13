@@ -124,6 +124,24 @@ node --test 'game/tests/*.test.mjs'   # sims, FK, state (no browser needed)
 node game/tests/browser.mjs          # full flow in headless Chrome, server must be running
 ```
 
+## Website (Vercel)
+
+The public site is static: `site/` is the homepage (the silhouette hero plus the interactive
+Bench Shift, in `site/index.html` and `site/media/`), and the game is served from it at `/demo/`.
+`scripts/build-site.sh` assembles both into `dist/`; `vercel.json` runs it and serves `dist/`
+(no framework, no install step), and `.vercelignore` uploads only `site/`, `game/` and `scripts/`.
+
+```sh
+sh scripts/build-site.sh && python3 -m http.server -d dist 8000   # preview: / and /demo/
+vercel            # preview deploy (first run links the project)
+vercel --prod     # production
+```
+
+Or import the repo in the Vercel dashboard and leave every build setting at its default; `vercel.json`
+supplies them. On Vercel the game's "Start the pong game" button shows the command instead of
+launching it (there is no `serve.py` there). The silhouette ships twice: WebM with alpha for
+Chrome/Firefox, HEVC with alpha (`.mov`) for Safari and iOS, which can't draw WebM transparency.
+
 ## How the RL works
 
 There are two reinforcement-learning systems in this repo, and the game deliberately mirrors

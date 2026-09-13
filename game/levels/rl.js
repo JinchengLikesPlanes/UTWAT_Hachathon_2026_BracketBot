@@ -388,7 +388,9 @@ export async function showLevel(app) {
         const res = await fetch('./launch', { method: 'POST' })
         const j = await res.json().catch(() => ({}))
         if (res.ok) { status.replaceChildren(feedback(j.started ? r.started : r.alreadyRunning, 'good')); audio.play('pass') }
-        else status.replaceChildren(feedback(r.failed.replace('{why}', j.error ?? res.status), 'bad'))
+        // serve.py always answers with {error}; anything else is a static host (Vercel, http.server)
+        else if (j.error) status.replaceChildren(feedback(r.failed.replace('{why}', j.error), 'bad'))
+        else status.replaceChildren(feedback(r.noLauncher, 'bad'))
       } catch { status.replaceChildren(feedback(r.noLauncher, 'bad')) }
       startBtn.disabled = false
     }, { primary: true, id: 'start-real-game' })

@@ -32,3 +32,8 @@ runs/rally-wheels-match-candidate0/checkpoints/*
 web/node_modules/
 web/dist/
 web/tsconfig.tsbuildinfo
+
+# Vercel: static site build output (scripts/build-site.sh) and local project link
+/dist/
+.vercel/
+.vercel
