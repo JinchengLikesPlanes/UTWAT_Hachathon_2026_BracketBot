@@ -58,7 +58,7 @@ export async function showLevel(app) {
     return hand.z
   }
   let ballZ = pose(R.HEIGHTS[2], 0)
-  view.lookAt([1.9, 1.7, 5.4], [1.9, 0.9, 0])
+  view.lookAt(view.phone() ? [1.4, 1.7, 5.4] : [1.9, 1.7, 5.4], view.phone() ? [1.4, 0.9, 0] : [1.9, 0.9, 0], { width: 5.2, height: 2.0 })
   const cleanup = () => { view.scene.remove(dressing); robot.links.get('right_eef').remove(paddle); robot.group.position.x = 0; app.tick = null }
 
   // --- ball path playback ---

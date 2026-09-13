@@ -6,7 +6,9 @@ export const PHONE_WIDTH = 700
 export function createScene(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' })
   renderer.setClearColor(0x10141c)
-  renderer.shadowMap.enabled = true
+  // Phones: no shadows, DPR 1. Decided once at start-up (toggling shadows at runtime re-compiles materials).
+  const phoneAtStart = innerWidth < PHONE_WIDTH
+  renderer.shadowMap.enabled = !phoneAtStart
   renderer.shadowMap.type = THREE.PCFSoftShadowMap
   renderer.toneMapping = THREE.ACESFilmicToneMapping
 
@@ -52,8 +54,6 @@ export function createScene(canvas) {
     const dpr = Math.min(devicePixelRatio || 1, phone() ? 1.0 : 1.5)
     renderer.setPixelRatio(dpr)
     renderer.setSize(innerWidth, innerHeight, true)
-    renderer.shadowMap.enabled = !phone()
-    floorMat.needsUpdate = true
     camera.aspect = innerWidth / innerHeight
     camera.updateProjectionMatrix()
   }
@@ -77,8 +77,25 @@ export function createScene(canvas) {
 
   function setDev(on) { devOn = on; dev.hidden = !on }
 
-  // Camera presets per screen; levels tween toward these.
-  function lookAt(pos, target) { camera.position.set(...pos); camera.lookAt(...target) }
+  // Camera preset. On a phone the scene must fit in the band between the top bar and the panel
+  // (screen y 8 %–40 %): the camera backs off along its view line until `width` × `height` metres
+  // fit there, and the look-at point drops so that band is centred on the target.
+  const dir = new THREE.Vector3(), tgt = new THREE.Vector3()
+  const BAND = 0.32, BAND_SHIFT = 0.26
+  function lookAt(pos, target, { width = 0, height = 0 } = {}) {
+    camera.position.set(...pos); tgt.set(...target)
+    if (phone()) {
+      const halfTan = Math.tan(camera.fov * Math.PI / 360)
+      dir.copy(camera.position).sub(tgt)
+      let d = dir.length()
+      if (width > 0) d = Math.max(d, width / (2 * halfTan * camera.aspect))
+      if (height > 0) d = Math.max(d, height / (2 * halfTan * BAND))
+      dir.normalize()
+      camera.position.copy(tgt).addScaledVector(dir, d)
+      tgt.y -= BAND_SHIFT * 2 * d * halfTan
+    }
+    camera.lookAt(tgt)
+  }
 
   return { renderer, scene, camera, zUp, floor, resize, render, setDev, lookAt, phone }
 }

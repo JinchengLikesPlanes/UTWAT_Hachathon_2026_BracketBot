@@ -36,7 +36,7 @@ export function showHub(app) {
   foot.append(reset)
   root.append(foot)
   ui.append(root)
-  app.view.lookAt([2.4, 1.1, 3.0], [0, 1.6, 0])
+  app.view.lookAt([2.4, 1.1, 3.0], [0, 1.6, 0], { width: 2.0, height: 1.8 })
   app.robot.group.position.set(0, 0, 0)
 }
 

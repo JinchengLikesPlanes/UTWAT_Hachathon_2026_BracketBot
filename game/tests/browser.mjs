@@ -168,6 +168,16 @@ try {
     await page.screenshot({ path: out + 'phone-hub.png' })
     await ctx.close()
   }
+  if (!only || only === 'perf') {
+    const { ctx, page } = await open({}, '?dev=1')
+    await page.evaluate(() => { const s = window.bb.state; s.levels.rl.step = 4; localStorage.setItem('bb-game-v1', JSON.stringify(s)) })
+    await page.reload({ waitUntil: 'commit' }); await page.waitForFunction(() => window.bb?.robot)
+    await btn(page, 'play-rl').click(); await page.waitForSelector('button[data-id="train"]')
+    await btn(page, 'train').click(); await page.waitForTimeout(4000)
+    const fps = +(await page.locator('#dev').getAttribute('data-fps'))
+    ok('rally scene fps ≥ 30 while training (headless)', fps >= 30, `${fps} fps — ${await page.locator('#dev').textContent()}`)
+    await ctx.close()
+  }
   ok('no console errors / 404s', errors.length === 0, errors.join(' | '))
   console.log(`\nALL ${steps.length} CHECKS PASSED`)
 } catch (e) {

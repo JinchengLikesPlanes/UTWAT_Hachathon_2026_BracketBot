@@ -22,7 +22,7 @@ export async function showLevel(app) {
   arrow.visible = false
   dressing.add(arrow)
   view.scene.add(dressing)
-  view.lookAt([0.5, 1.0, 2.9], [0.25, 0.7, 0])
+  view.lookAt([0.5, 1.0, 2.9], [0.25, 0.7, 0], { width: 2.4, height: 1.8 })
   const wheels = ['left_wheel_tire__left_wheel_tire', 'right_wheel_tire__right_wheel_tire'].map(n => makeSpinner(robot, n))
   const cleanup = () => { view.scene.remove(dressing); app.tick = null }
 

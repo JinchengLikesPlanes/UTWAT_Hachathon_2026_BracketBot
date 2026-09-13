@@ -27,7 +27,7 @@ export async function showLevel(app) {
   frame.position.copy(card.position).add(new THREE.Vector3(-0.005, 0, -0.008)); frame.rotation.copy(card.rotation)
   dressing.add(frame, card)
   view.scene.add(dressing)
-  view.lookAt([1.9, 1.7, 2.3], [0.35, 1.15, 0])
+  view.lookAt([1.9, 1.7, 2.3], [0.35, 1.15, 0], { width: 2.2, height: 1.9 })
   const head = makeSpinner(robot, 'head__head__head__head')
   let nod = 0
   app.tick = dt => { nod = Math.max(0, nod - dt); head.setAngle(-0.25 * Math.sin(nod * Math.PI * 2) * (nod > 0 ? 1 : 0)) }
