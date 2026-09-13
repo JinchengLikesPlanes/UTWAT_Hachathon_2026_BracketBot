@@ -1,9 +1,15 @@
-# Bracket Pong
+# BracketBot Robotics
 
-An actual MuJoCo + Gymnasium + PPO starting point for training the supplied
-BracketBot to return table-tennis balls. The original asset bundle remains in
-`chopped_urdf_v2/`. The project roadmap and acceptance gates are in [PLAN.md](PLAN.md);
-the learning-lab product spec is in [docs/LEARNING_LAB_SPEC.md](docs/LEARNING_LAB_SPEC.md).
+**Direction:** a standalone browser game where kids complete small tasks with the real
+BracketBot model to learn PID, RL and vision — see **[docs/GAME_PLAN.md](docs/GAME_PLAN.md)**
+(design + implementation plan; the single source of direction). The founding intent is in
+[note.md](note.md); real-world reproduction guides are in
+[docs/CLASSROOM_LABS.md](docs/CLASSROOM_LABS.md).
+
+The game lives in `game/` (in progress). Everything below is the existing code the game
+builds on: the MuJoCo + Gymnasium + PPO training stack, the desktop rally match, and the
+earlier local Learning Lab (spec in [docs/LEARNING_LAB_SPEC.md](docs/LEARNING_LAB_SPEC.md)).
+The original asset bundle (URDF + Draco meshes) is in `chopped_urdf_v2/`.
 
 ## BracketBot Learning Lab
 
@@ -54,8 +60,6 @@ versus 16/100 for the baseline; this is not a full-court coverage result.
 Restart an already-open window to load the new policy.
 
 This is a working experimental game, **not yet a robust full-court opponent**.
-See [RALLY_STATUS.md](RALLY_STATUS.md) for measurements and remaining work,
-and [RALLY_ROBUSTNESS_PLAN.md](RALLY_ROBUSTNESS_PLAN.md) for acceptance gates.
 The default match uses a free chassis, independent torque-limited wheel drives,
 and tire/ground contact. It turns before driving sideways across the court;
 it cannot command lateral sliding. Wheel dimensions follow the CAD assembly,
