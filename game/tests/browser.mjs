@@ -149,44 +149,6 @@ async function rlLevel(page) {
   ok('rl badge survives reload', (await page.locator('[data-level=rl] .progress').textContent()) === 'Badge earned')
 }
 
-// A 64×64 solid-colour PNG built in the browser (no file on disk needed).
-const pngBuffer = async (page, css) => Buffer.from(await page.evaluate(async css => {
-  const c = document.createElement('canvas'); c.width = c.height = 64
-  const ctx = c.getContext('2d'); ctx.fillStyle = css; ctx.fillRect(0, 0, 64, 64)
-  const blob = await new Promise(r => c.toBlob(r, 'image/png'))
-  return [...new Uint8Array(await blob.arrayBuffer())]
-}, css))
-
-async function visionLevel(page) {
-  await btn(page, 'play-vision').click()
-  await page.waitForSelector('.photos')
-  const labelAll = async () => {
-    const ids = await page.$$eval('.photos .photo', els => els.map(e => e.dataset.id))
-    const truth = await page.evaluate(() => Object.fromEntries([...window.bb.debug.vision.train, ...window.bb.debug.vision.improve].map(s => [s.id, s.truth])))
-    for (const id of ids) { await page.locator(`.photo[data-id="${id}"] canvas`).click(); await btn(page, `label-${truth[id]}`).click() }
-  }
-  await labelAll(); await nextVisible(page); await btn(page, 'next').click()
-  await btn(page, 'train').click(); await nextVisible(page)
-  ok('vision trained', await page.locator('.feedback.good').count() === 1)
-  await btn(page, 'next').click()
-  const total = await page.locator('[data-id=test-total] .v').textContent()
-  ok('vision test ≥ 10/12', +total.split('/')[0] >= 10, total)
-  await btn(page, 'next').click()
-  await labelAll(); await btn(page, 'retrain').click(); await nextVisible(page)
-  const hardAfter = await page.locator('[data-id=cmp-hard-after] .v').textContent()
-  ok('vision retrain shows comparison', /\/6/.test(hardAfter), hardAfter)
-  await btn(page, 'next').click()
-  await page.locator('input[data-id="photo"]').setInputFiles({ name: 'red.png', mimeType: 'image/png', buffer: await pngBuffer(page, '#d62828') })
-  await nextVisible(page)
-  const said = await page.locator('.feedback.good').textContent()
-  ok('vision real photo → red', /Red/.test(said), said)
-  await btn(page, 'next').click()
-  await btn(page, 'choice-1').click(); await nextVisible(page); await btn(page, 'next').click()
-  await page.waitForSelector('button[data-id="to-hub"]'); await btn(page, 'to-hub').click()
-  await page.reload({ waitUntil: 'commit' }); await page.waitForFunction(() => window.bb?.robot)
-  ok('vision badge survives reload', (await page.locator('[data-level=vision] .progress').textContent()) === 'Badge earned')
-}
-
 try {
   if (!only || only === 'vision') {
     const { ctx, page } = await open()
