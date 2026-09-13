@@ -1,14 +1,111 @@
 # BracketBot Robotics
 
-A browser game in which kids (10–13) complete small missions with the **real BracketBot
-model** (the original URDF meshes) to learn PID control, the five steps of training an RL
-ping-pong policy, and simple visual machine learning. Nothing is faked: the PID loop, the
-policy-gradient training and the colour classifier all run for real in the browser, and every
-mission ends with a "Try it on the real BracketBot" card.
+A browser game in which kids (10–13) teach the **real BracketBot model** (the original URDF
+meshes) to play pong. One mission, three skills, in the order the real robot needs them:
+stand up (PID), see the ball (depth-camera tracking), play pong (reinforcement learning).
+Nothing is faked: the balancing loop, the ball tracker and the policy-gradient training all run
+for real in the browser, and every mission ends with a "Try it on the real BracketBot" card.
 
 Direction: **[docs/GAME_PLAN.md](docs/GAME_PLAN.md)** (design + implementation plan, the single
 source of direction). Founding intent: [note.md](note.md). Physical activity guide:
 [docs/CLASSROOM_LABS.md](docs/CLASSROOM_LABS.md).
+
+## The story
+
+The game is built around one question a kid can hold in their head: *what does a robot need
+before it can hit a ball back?* The answer is the level order, and each level hands its result
+to the next.
+
+```
+Level 1  Stand up      the balance loop keeps the two-wheeled robot upright and on its spot
+   │
+   ▼
+Level 2  See the ball  the head camera turns colour + depth pictures into x, y, vx, vy
+   │
+   ▼
+Level 3  Play pong     a policy reads those four numbers, learns by trial and error,
+                       and the badge launches the real MuJoCo pong game
+```
+
+That chain is the real robot's pipeline, not a teaching metaphor. Level 1 is the loop the
+physical BracketBot runs on its IMU and wheels. Level 2 is `bracket_pong/education/ball_tracker.py`
+in the browser, and its four outputs are the observation `bracket_pong/rally.py` feeds its policy.
+Level 3 trains on exactly those inputs. The hub draws the three as a numbered path; each finished
+level earns a badge that says which skill it unlocked.
+
+Two rules hold everywhere:
+
+- **The robot never pretends.** Gravity really wins in Level 1 until the player adds P and D.
+  The ball tracker really loses the ball when the colour window is too wide. The policy really
+  fails to learn when exploration is off, and the level says so.
+- **Every task is reproducible on the physical robot.** Each badge card gives the steps, the
+  Python file that runs the same pipeline, and the safety line, from
+  [docs/CLASSROOM_LABS.md](docs/CLASSROOM_LABS.md).
+
+### Level 1: Stand up (PID)
+
+BracketBot is what it is in real life, a two-wheeled inverted pendulum. The only actuator is
+wheel acceleration, with motor lag and 40 ms of sensing latency. The player tunes four gains in
+the order a real engineer would, and watches live tilt and position graphs.
+
+| Step | The player | Passes when |
+|---|---|---|
+| 1 Watch it fall | Runs with the motors off; gravity wins in about 1.4 s | The trial ran |
+| 2 Add P | Slides P up; the robot fights, swings harder, still falls | Any run with P > 0 |
+| 3 Add D | Slides D up and survives a quick push | Upright for 8 s (it still drifts) |
+| 4 Stay on the line | Slides Hold up, so the robot leans back toward its spot | Upright and within 15 cm for the last 2 s |
+| 5 The exam | One set of gains against a push, a long push and a steady pull; I unlocks | All three stable with identical gains |
+| Concept check | "It stands still 20 cm off the line under a steady lean. Which gain fixes that?" | I |
+
+Sim: `game/sim/pid.js`, 50 Hz, calibrated so the reference gains (P 6, D 5, Hold 5, I 5) pass
+and obvious mistakes fail the way they do on hardware.
+
+### Level 2: See the ball (vision)
+
+The camera cover on the robot's head (1.575 m up, measured from the URDF) is the sim's camera:
+a 160×120 pinhole that ray-casts a colour picture and a depth picture 30 times a second. The
+player builds the tracking pipeline one knob at a time and watches both pictures plus the
+x, y, vx, vy readout.
+
+| Step | The player | Passes when |
+|---|---|---|
+| 1 What the camera sees | Serves, watches colour and depth side by side | Answers "the depth picture tells distance" |
+| 2 Find the ball | Picks a hue width (±2° … ±30°) | Ball found on ≥ 90 % of frames, ≤ 1 px off |
+| 3 Where is it? | Guesses distance from apparent size vs. reading the depth pixel | Depth mode and ≤ 3 cm |
+| 4 How fast, where will it land? | Picks the frame gap and the bounce rule; sees the forecast graph | Forecast within 5 cm, in time for the arm |
+| 5 The exam | Ten unseen serves with the player's settings | ≥ 8 of 10 forecasts within 5 cm |
+| Concept check | "A pixel at (80, 60). What else is needed to get metres?" | The depth at that pixel |
+
+Sim: `game/sim/vision.js`. Between serves the robot idles: a ball dribbles on the far half and
+the head (and its camera frustum) turns to follow it.
+
+### Level 3: Play pong (RL)
+
+The four numbers from Level 2 go into a 75-weight softmax policy over 15 paddle actions
+(5 heights × 3 tilts, driving the real mast carriage and wrist in the 3-D scene). The seven
+steps are the five stages of training an RL model, with two honest detours.
+
+| Step | The player | What it teaches |
+|---|---|---|
+| 1 Set the task | Picks the replay where the job is actually done | Success must be defined before learning |
+| 2 Senses and controls | Sorts cards into observation vs. action | The senses are Level 2's output |
+| 3 Choose the reward | Compares two reward plans, picks one | Reward shapes behaviour |
+| 4 Should it explore? | Chooses whether to try uncertain actions | With exploration off it learns nothing, and the level says so |
+| 5 Train | 300 real REINFORCE episodes with a learning curve | Learning is a curve, not a switch |
+| 6 Was 300 enough? | Reads the curve, can train 300 more | Stop when the held-out score stops climbing |
+| 7 Evaluate | 20 serves it never trained on, before vs. after | Unseen serves prove skill, reward does not |
+| Concept check | "Which number proves it returns balls?" | Legal returns on the 20 unseen serves |
+
+The badge card ends with **Start the pong game**, which launches the desktop MuJoCo rally whose
+policy was trained with PPO on the same five stages (see [How the RL works](#how-the-rl-works)).
+
+### Look and feel
+
+One warm paper-and-ink palette (`game/style.css`), Inter, hairline borders, a light grain over
+the 3-D scene, and quiet copy. Charts use ink for the player's signal and green only for
+"truth" lines. The hub is a winding path with numbered nodes, in mission order, with step dots
+and badges. Textures and badges are procedural (`game/tools/procedural_assets.mjs`, manifest in
+`game/design/assets.csv`); the ping-pong table is charcoal on a paper floor.
 
 ## Play the game
 
@@ -26,21 +123,6 @@ layout, tests and deployment.
 node --test 'game/tests/*.test.mjs'   # sims, FK, state (no browser needed)
 node game/tests/browser.mjs          # full flow in headless Chrome, server must be running
 ```
-
-## The story of the game
-
-One mission — *teach BracketBot to play pong* — in three skills, in order:
-
-1. **Stand Up** (PID): the two-wheeled robot falls under gravity; the player adds P, D, Hold and I
-   until it stands, holds its spot and shrugs off pushes.
-2. **See the Ball** (vision): the depth camera in the head gives a colour and a depth picture
-   30 times a second. The player builds the tracking pipeline — colour width, depth vs size,
-   frame gap and bounce rule — until the robot forecasts where the ball will cross its paddle
-   line within 5 cm on 8 of 10 unseen serves. The output is the ball's x, y, vx, vy — the same
-   observation `bracket_pong/rally.py` feeds its policy. `bracket_pong/education/ball_tracker.py`
-   is that pipeline for real frames.
-3. **Play Pong** (RL): those four numbers go into a policy that learns by trial and error, and
-   the badge card launches the full MuJoCo pong game.
 
 ## How the RL works
 
@@ -172,9 +254,13 @@ Draco meshes) is in `chopped_urdf_v2/`.
 
 ## BracketBot Learning Lab
 
-The local browser lab introduces robotics through three guided activities for
-ages 10–13: PID position control, the five stages of training a ping-pong RL
-model, and three-color visual classification.
+The local browser lab (`web/` + `bracket_pong/education/`) is the first version of the same
+idea, before the pong story tied the levels together. It has three guided activities for ages
+10–13 in its own order: PID position control on a 1-D chassis, the five stages of training a
+ping-pong RL model (a real PPO job on the MuJoCo environment), and three-colour visual
+classification. The game replaced the colour classifier with ball tracking so that Level 2
+feeds Level 3; the lab keeps the classifier because it is the simplest possible "train, test,
+improve" loop. The lab shares the game's paper-and-ink styling.
 
 ```sh
 uv sync --locked

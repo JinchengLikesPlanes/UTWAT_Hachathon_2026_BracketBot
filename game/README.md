@@ -1,7 +1,9 @@
 # BracketBot Robotics — the game
 
 Static web app: plain ES modules, Three.js 0.184 (vendored) rendering the original BracketBot
-URDF, three pure simulations, a DOM overlay. No build step, no server logic.
+URDF, three pure simulations, a DOM overlay. No build step, no server logic. The story
+(Stand up → See the ball → Play pong) and each level's steps are in the
+[top-level README](../README.md#the-story); the spec is `docs/GAME_PLAN.md`.
 
 ## Run
 
@@ -11,25 +13,28 @@ python3 game/serve.py                        # http://127.0.0.1:8000  (?dev=1 �
 
 `serve.py` = static server + `POST /launch`, which starts the desktop pong game
 (`.venv/bin/python -m bracket_pong.play`) when the player presses "Start the pong game".
-Any static server works for everything else.
+Any static server works for everything else. Inter is fetched from Google Fonts; offline the
+page falls back to the system font and nothing else changes.
 
 ## Layout
 
 | Path | What |
 |---|---|
 | `index.html`, `main.js` | page, boot, router, fixed-step loop |
+| `style.css`, `grain.css` | the DuoBotics look ([docs/UI_DESIGN.md](../docs/UI_DESIGN.md)); `grain.css` is the inlined noise tile |
 | `serve.py` | local server + pong-game launcher |
 | `logic.js` | platform stub (solo game) |
 | `strings.js` | every player-visible string |
 | `state.js`, `rng.js` | localStorage progress (`bb-game-v1`), seeded PRNG |
 | `robot.js`, `scene.js` | URDF → Three.js tree (`buildRobot`, `setJoint`, `makeSpinner`), renderer/camera |
-| `ui.js`, `audio.js`, `hub.js` | overlay kit, synthesised SFX, hub screen |
+| `ui.js`, `audio.js`, `hub.js` | overlay kit, synthesised SFX, hub (a winding numbered path in mission order with step dots and badges) |
+| `style.css`, `grain.css` | the paper-and-ink design tokens and layout; the animated grain overlay behind the UI |
 | `levels/pid.js`, `rl.js`, `vision.js` | the three missions; `levels/common.js` shared plumbing |
 | `sim/pid.js` | 50 Hz PID over a calibrated 1-D chassis (same law/gains/disturbances as the lab) |
 | `sim/rally.js` | 2-D serve, 15-action paddle, linear softmax policy, REINFORCE, 20-serve eval set |
 | `sim/vision.js` | head depth-camera model (ray-cast colour + depth frames), hue-window detection, deprojection, velocity, bounce rule, crossing forecast |
 | `assets/robot/` | `robot.json` (baked from the URDF by `tools/bake_urdf.py`) + 50 Draco GLBs |
-| `assets/*.png`, `design/assets.csv` | textures, badges, hub background + manifest |
+| `assets/*.png`, `design/assets.csv` | textures and badges + manifest (`spr_hub_bg.png` is generated but no longer referenced) |
 | `vendor/three/` | pinned Three.js modules and the Draco decoder |
 | `tests/*.test.mjs` | `node --test` unit tests (sims, FK vs Python, state) |
 | `tests/browser.mjs` | Playwright full-flow check (three levels, reload, phone touch-only, fps) |
