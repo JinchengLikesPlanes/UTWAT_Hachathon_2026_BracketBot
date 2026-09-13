@@ -1,0 +1,13 @@
+id,role,type,file,source,notes
+tex_floor,floor tile,texture 512x512 tileable,assets/tex_floor.png,procedural,dark studio floor with grid seams; replace with Higgsfield output under the chosen STYLE FORMULA
+tex_table,table top,texture 512x512 tileable,assets/tex_table.png,procedural,ping-pong table blue with grain
+spr_badge_pid,hub badge (Hold the Line),sprite 512x512,assets/spr_badge_pid.png,procedural,amber medal with P
+spr_badge_rl,hub badge (Teach the Rally),sprite 512x512,assets/spr_badge_rl.png,procedural,green medal with R
+spr_badge_vision,hub badge (Robot Eyes),sprite 512x512,assets/spr_badge_vision.png,procedural,blue medal with V
+spr_hub_bg,hub background,image 16:9 1280x720,assets/spr_hub_bg.png,procedural,dark gradient with perspective grid
+sfx_click,UI click,audio,-,synth,Web Audio oscillator in audio.js
+sfx_pass,step passed,audio,-,synth,Web Audio oscillator in audio.js
+sfx_fail,wrong answer,audio,-,synth,Web Audio oscillator in audio.js
+sfx_hit,paddle hit,audio,-,synth,Web Audio oscillator in audio.js
+sfx_bounce,ball bounce,audio,-,synth,Web Audio oscillator in audio.js
+music_hub,hub loop,audio ≤60 s,-,none,silent until a generated loop is added via audio.loadFile('music_hub', url)

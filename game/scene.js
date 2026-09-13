@@ -31,14 +31,20 @@ export function createScene(canvas) {
   sun.shadow.camera.far = 20
   scene.add(sun)
 
-  const floorMat = new THREE.MeshStandardMaterial({ color: 0x2b3140, roughness: 0.95 })
+  // Textures come from design/assets.csv (procedural fallback or generated art); a missing file
+  // leaves the flat colour so the scene never shows a placeholder box.
+  const texLoader = new THREE.TextureLoader()
+  function texture(file, repeat = 1) {
+    const t = texLoader.load(`./assets/${file}`)
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat, repeat); t.colorSpace = THREE.SRGBColorSpace
+    t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy())
+    return t
+  }
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: texture('tex_floor.png', 20), roughness: 0.95 })
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), floorMat)
   floor.rotation.x = -Math.PI / 2
   floor.receiveShadow = true
   scene.add(floor)
-  const grid = new THREE.GridHelper(40, 40, 0x46506a, 0x353c4e)
-  grid.position.y = 0.001
-  scene.add(grid)
 
   // URDF is Z-up; Three is Y-up. Everything from the URDF hangs under this group.
   const zUp = new THREE.Group()
@@ -97,5 +103,5 @@ export function createScene(canvas) {
     camera.lookAt(tgt)
   }
 
-  return { renderer, scene, camera, zUp, floor, resize, render, setDev, lookAt, phone }
+  return { renderer, scene, camera, zUp, floor, resize, render, setDev, lookAt, phone, texture }
 }

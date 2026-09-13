@@ -62,12 +62,13 @@ canvas.graph { width: 100%; height: 150px; background: #0c1017; border-radius: 1
 .card .move { margin-left: auto; }
 .cardbank { display: flex; flex-wrap: wrap; gap: 8px; }
 
-.hub { position: absolute; inset: 0; overflow-y: auto; padding: 24px 16px 32px; display: flex; flex-direction: column; align-items: center; gap: 18px; background: radial-gradient(ellipse at top, rgba(255,181,71,.12), transparent 60%), linear-gradient(rgba(16,20,28,.55), rgba(16,20,28,.92)); }
+.hub { position: absolute; inset: 0; overflow-y: auto; padding: 24px 16px 32px; display: flex; flex-direction: column; align-items: center; gap: 18px; background: linear-gradient(rgba(16,20,28,.25), rgba(16,20,28,.6)), url(./assets/spr_hub_bg.png) center / cover no-repeat; }
 .hub h1 { margin: 12px 0 0; font-size: clamp(28px, 5vw, 44px); }
 .hub .sub { color: var(--muted); margin: 0 0 8px; text-align: center; }
 .levels { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; width: min(960px, 100%); }
 .level { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
-.level .badge { font-size: 42px; line-height: 1; }
+.level .badge { font-size: 42px; line-height: 1; height: 48px; }
+.level .badge img { height: 48px; width: 48px; }
 .level h2 { margin: 0; font-size: 20px; }
 .level p { margin: 0; color: var(--muted); font-size: 14px; flex: 1; }
 .level .progress { font-size: 13px; color: var(--accent); font-weight: 600; }
@@ -104,3 +105,4 @@ table.rewards th, table.rewards td { padding: 6px 8px; border-bottom: 1px solid 
 table.rewards td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
 table.rewards .hl { background: rgba(255,181,71,.12); }
 canvas.preview { width: 160px; height: 160px; border-radius: 10px; border: 2px solid var(--panel-border); align-self: center; }
+.badge-img { width: 140px; height: 140px; align-self: center; }

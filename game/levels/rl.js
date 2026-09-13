@@ -16,7 +16,7 @@ export async function showLevel(app) {
 
   // --- scene: table, net, ball, paddle ---
   const dressing = new THREE.Group()
-  const wood = new THREE.MeshStandardMaterial({ color: 0x1f6f8b, roughness: 0.7 })
+  const wood = new THREE.MeshStandardMaterial({ color: 0xffffff, map: view.texture('tex_table.png', 2), roughness: 0.7 })
   const top = new THREE.Mesh(new THREE.BoxGeometry(R.TABLE_LEN, 0.03, 1.525), wood)
   top.position.set(R.TABLE_LEN / 2, TABLE_H - 0.015, 0); top.receiveShadow = true; top.castShadow = true
   dressing.add(top)

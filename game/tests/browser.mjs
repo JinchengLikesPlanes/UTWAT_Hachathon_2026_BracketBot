@@ -3,11 +3,12 @@
 // Env: GAME_URL (default http://127.0.0.1:8000), CHROME_PATH, ONLY=pid|rl|vision|phone
 import { chromium } from '../../web/node_modules/playwright/index.mjs'
 import { mkdir } from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
 
 const baseURL = process.env.GAME_URL || 'http://127.0.0.1:8000'
 const chrome = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const only = process.env.ONLY
-const out = new URL('../../artifacts/game-qa/', import.meta.url).pathname
+const out = fileURLToPath(new URL('../../artifacts/game-qa/', import.meta.url))
 await mkdir(out, { recursive: true })
 
 const browser = await chromium.launch({ headless: true, executablePath: chrome })

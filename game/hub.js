@@ -13,7 +13,9 @@ export function showHub(app) {
     const s = STR.hub.levels[id], lv = state.levels[id]
     const card = el('article', 'level')
     card.dataset.level = id
-    card.append(el('div', 'badge', lv.done ? '🏅' : s.icon), el('h2', '', s.name), el('p', '', s.blurb))
+    const badge = el('div', 'badge', lv.done ? '' : s.icon)
+    if (lv.done) { const img = el('img'); img.src = `./assets/spr_badge_${id}.png`; img.alt = STR.hub.badge; badge.append(img) }
+    card.append(badge, el('h2', '', s.name), el('p', '', s.blurb))
     card.append(el('div', 'progress', lv.done ? STR.hub.badge : STR.hub.progress.replace('{n}', lv.step)))
     const acts = el('div', 'actions')
     const playLabel = lv.done ? STR.hub.play : lv.step > 1 ? STR.hub.resume : STR.hub.play
@@ -36,7 +38,7 @@ export function showHub(app) {
   foot.append(reset)
   root.append(foot)
   ui.append(root)
-  app.view.lookAt([2.4, 1.1, 3.0], [0, 1.6, 0], { width: 2.0, height: 1.8 })
+  app.view.lookAt([1.6, 1.9, 4.4], [-0.9, 1.55, 0], { width: 2.0, height: 1.8 })
   app.robot.group.position.set(0, 0, 0)
 }
 
