@@ -63,6 +63,11 @@ export const STR = {
     disturbances: { push: 'Quick push', long_push: 'Long push', steady_pull: 'Steady pull', none: 'No push' },
     graphs: { tilt: 'Tilt (degrees)', position: 'Distance from the line (cm)' },
     metrics: { stood: 'Stayed up?', yes: 'Yes', fellAt: 'Fell at {t} s', fell: 'Fell', wobble: 'Wobble', drift: 'Drifted', tail: 'Last 2 s' },
+    pop: {
+      fell: 'It fell at {t} s.', fellLater: 'It fell at {t} s — later than {t0} s, but still fell.', stood: 'It stayed up!',
+      standDrift: 'Standing — but it drifted {drift} cm.', back: 'Back on the line: {tail} cm.', off: 'Upright, but {tail} cm off the line.',
+      need: 'Slide {gain} up first.', passedOne: 'Passed. Run the other two.', passedAll: 'All three held. Tuned!', needI: 'Parked {tail} cm off. Add I.',
+    },
     steps: {
       1: {
         title: 'Watch it fall',
@@ -165,6 +170,8 @@ export const STR = {
         switched: 'Brain reset. Now training with "{preset}".',
         cancelled: 'Stopped after {n} serves. The robot keeps what it learned so far.',
         done: 'Done. Reward went from {first} (first 50 serves) to {last} (last 50). Legal returns during training: {legal}. It is now {sure}% sure about its favourite choice. Next: was 300 enough?',
+        pop: 'Trained: {legal} returns in 300 serves. Now {sure}% sure of its favourite.',
+        noExplorePop: 'It learned nothing — it never tried anything new.',
         noExplore: 'It returned {legal} balls in 300 serves and learned nothing: it always took its first guess, so it never found out that anything else works. Turn exploration on and train again.',
         backToExplore: 'Back to exploration',
         m: { episode: 'Serves', reward: 'Reward (last 20)', contacts: 'Touches', legal: 'Legal returns' },
@@ -177,6 +184,7 @@ export const STR = {
         idle: 'Ready.',
         serving: 'Serve {n} of 20 · {who} · arm goes to {height} cm, {tilt} tilt',
         run: 'Run the 20-serve test',
+        pop: 'Unseen serves: {b} → {a} legal returns.',
         improved: 'Legal returns went from {b} to {a} on unseen serves. That is real improvement.',
         notImproved: 'Legal returns went from {b} to {a}. It did not improve much — that happens. Go back and train longer, or try the other reward plan.',
       },
@@ -199,6 +207,8 @@ export const STR = {
       curveLabel: 'Legal returns (of 20) vs serves trained',
       summary: 'After 100 serves: {at100}/20. After 300: {at300}/20. Now ({total} serves): {now}/20.',
       more: 'Train 300 more',
+      flatPop: 'Flat since ~{flatAt} serves. 300 was plenty.',
+      stillRisingPop: 'Still climbing: {at300} → {now}. Not enough yet.',
       flat: 'After 300 more serves the score went from {at300} to {now} — a gain of {gain}. The curve went flat at about {flatAt} serves; everything after that, including the extra 300, taught nothing new. Engineers stop a safe distance past the flat point — so 300 was plenty here.',
       stillRising: 'After 300 more serves the score went from {at300} to {now} — still climbing by {gain}. So 300 was not quite enough here; the curve tells you, not a rule of thumb.',
     },
@@ -221,6 +231,12 @@ export const STR = {
         '.venv/bin/python -m bracket_pong.evaluate_rally --mobile --model runs/my-wheels/best_model.zip --output artifacts/my-wheels-coverage.json --per-cell 20',
       ],
       warn: 'Needs the Python setup from the README (uv sync --locked).',
+      start: 'Start the pong game',
+      starting: 'Starting…',
+      started: 'Started — look for the new window.',
+      alreadyRunning: 'It is already running — look for its window.',
+      failed: 'Could not start it: {why}',
+      noLauncher: 'This page is not being served by game/serve.py, so it cannot start programs. Run the command above in a terminal instead.',
     },
     concept: {
       question: 'Which number proves the robot actually returns balls?',
@@ -246,6 +262,7 @@ export const STR = {
         note: 'It only looks at the average colour of the middle of each photo. Nothing else.',
         train: 'Train',
         done: 'Trained on {n} examples. It gets {acc}% of them right. But that is on photos it has already seen…',
+        pop: 'Trained. {acc}% right — on photos it already saw.',
       },
       3: {
         title: 'Test on new photos',
@@ -259,6 +276,7 @@ export const STR = {
         note: 'After retraining, the robot is scored on the same 12 test photos so the comparison is fair.',
         retrain: 'Train again (24 examples)',
         done: 'Retrained. Compare the numbers: more examples of the hard cases changed what the robot believes.',
+        pop: 'Test {tb} → {ta} of 12 · Tricky {hb} → {ha} of 6.',
         m: { testBefore: 'Test before', testAfter: 'Test after', hardBefore: 'Tricky before', hardAfter: 'Tricky after' },
       },
       5: {

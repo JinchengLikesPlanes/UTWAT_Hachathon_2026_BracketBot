@@ -154,7 +154,7 @@ async function rlLevel(page) {
   await btn(page, 'next').click()
   await btn(page, 'choice-1').click(); await nextVisible(page); await btn(page, 'next').click()
   await page.waitForSelector('button[data-id="to-hub"]')
-  await btn(page, 'real-game').click(); ok('rl real-game card', await page.locator('[data-modal=real-game] pre').count() === 1); await btn(page, 'close-real-game').click()
+  await btn(page, 'real-game').click(); ok('rl real-game card', await page.locator('[data-modal=real-game] pre').count() === 1 && await btn(page, 'start-real-game').count() === 1); await btn(page, 'close-real-game').click()
   await btn(page, 'to-hub').click()
   await page.reload({ waitUntil: 'commit' }); await page.waitForFunction(() => window.bb?.robot)
   ok('rl badge survives reload', (await page.locator('[data-level=rl] .progress').textContent()) === 'Badge earned')

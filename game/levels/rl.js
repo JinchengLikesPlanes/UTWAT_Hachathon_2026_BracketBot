@@ -76,8 +76,19 @@ export async function showLevel(app) {
     trail.visible = false; ball.visible = false
     play = { path: o.path, i: 0, speed, onDone, onServe, o, hitPlayed: false, phase: 'move', mt: 0, moveTime, from: { ...armNow }, to: action }
   }
+  const idleRng = R.rngFor(42)
+  let idle = { t: 0, from: { ...READY }, to: R.ACTIONS[idleRng.int(R.ACTIONS.length)], wait: 0 }
   app.tick = dt => {
     if (trainer) trainer(dt)
+    if (!play && !trainer) {
+      // idle: warm-up swings through the 15 paddle poses, so the robot never just stands there
+      idle.t += dt
+      const k = Math.min(1, idle.t / 0.8), e = k * k * (3 - 2 * k)
+      armNow = { height: idle.from.height + (idle.to.height - idle.from.height) * e, tilt: idle.from.tilt + (idle.to.tilt - idle.from.tilt) * e }
+      ballZ = pose(armNow.height, armNow.tilt)
+      if (idle.t > 1.6) idle = { t: 0, from: { ...idle.to }, to: R.ACTIONS[idleRng.int(R.ACTIONS.length)] }
+      return
+    }
     if (!play) return
     if (play.phase === 'move') {
       play.mt += dt
@@ -159,7 +170,7 @@ export async function showLevel(app) {
         else { fb.append(feedback(S().steps[2].wrong.replace('{n}', wrong.length), 'bad')); audio.play('fail') }
       }, { id: 'check' })
       const board = cards(items, [{ id: 'sense', title: S().steps[2].zones.sense }, { id: 'control', title: S().steps[2].zones.control }], p => { placement = p }, { moveLabel: STR.common.move })
-      return panel({ title: S().steps[2].title, lead: S().steps[2].lead, note: S().steps[2].note, body: [board, fb], actions: [check, next] })
+      return panel({ title: S().steps[2].title, lead: S().steps[2].lead, note: S().steps[2].note, body: [board, fb], actions: [check, next], focus: true })
     },
     3: () => {
       const table = el('table', 'rewards')
@@ -184,7 +195,7 @@ export async function showLevel(app) {
         next.hidden = false
       }
       for (const id of Object.keys(R.PRESETS)) { pickBtns[id] = button(S().presets[id].pick, () => select(id), { id: `preset-${id}` }); picks.append(pickBtns[id]) }
-      return panel({ title: S().steps[3].title, lead: S().steps[3].lead, note: S().steps[3].note, body: [table, picks, blurb], actions: [next] })
+      return panel({ title: S().steps[3].title, lead: S().steps[3].lead, note: S().steps[3].note, body: [table, picks, blurb], actions: [next], focus: true })
     },
     4: () => {
       const bars = probBars()
@@ -202,7 +213,7 @@ export async function showLevel(app) {
       btns.no = button(S().uncertainty.no, () => pick(false), { id: 'explore-no' })
       if (lv.explore !== null) { btns.yes.classList.toggle('selected', lv.explore); btns.no.classList.toggle('selected', !lv.explore) }
       const row = el('div', 'row'); row.append(btns.yes, btns.no)
-      return panel({ title: S().uncertainty.title, lead: S().uncertainty.lead, note: S().uncertainty.note, body: [bars, row, fb], actions: [next] })
+      return panel({ title: S().uncertainty.title, lead: S().uncertainty.lead, note: S().uncertainty.note, body: [bars, row, fb], actions: [next], focus: true })
     },
     5: () => trainStep({ more: false }),
     6: () => enoughStep(),
@@ -278,12 +289,13 @@ export async function showLevel(app) {
       const avg = a => a.reduce((s, v) => s + v, 0) / Math.max(1, a.length)
       const first = avg(run.rewards.slice(0, 50)), last = avg(run.rewards.slice(-50))
       const evalNow = R.evaluate(policy).legal
-      let text, kind
-      if (lv.explore === false && evalNow <= 6) { text = S().steps[5].noExplore.replace('{legal}', run.legal); kind = 'bad'; backBtn.hidden = false }
-      else { text = S().steps[5].done.replace('{first}', first.toFixed(1)).replace('{last}', last.toFixed(1)).replace('{legal}', run.legal).replace('{sure}', Math.round(bars.maxP * 100)); kind = last > first ? 'good' : 'info'; next.hidden = false }
+      let text, kind, pop
+      const sure = Math.round(bars.maxP * 100)
+      if (lv.explore === false && evalNow <= 6) { text = S().steps[5].noExplore.replace('{legal}', run.legal); pop = S().steps[5].noExplorePop; kind = 'bad'; backBtn.hidden = false }
+      else { text = S().steps[5].done.replace('{first}', first.toFixed(1)).replace('{last}', last.toFixed(1)).replace('{legal}', run.legal).replace('{sure}', sure); pop = S().steps[5].pop.replace('{legal}', run.legal).replace('{sure}', sure); kind = last > first ? 'good' : 'info'; next.hidden = false }
       fb.replaceChildren(feedback(text, kind))
       audio.play(kind === 'bad' ? 'fail' : 'pass')
-      teach(text, kind)
+      teach(pop, kind)
     }
     return panel({ title: S().steps[5].title, lead: S().steps[5].lead, note: S().steps[5].note, body: [presetLine, counters, bars, fb], actions: [trainBtn, cancelBtn, switchBtn, backBtn, next] })
   }
@@ -321,7 +333,7 @@ export async function showLevel(app) {
         const gain = p.now - p.at300
         const text = (gain >= 3 ? S().enough.stillRising : S().enough.flat).replace('{gain}', gain).replace('{now}', p.now).replace('{at300}', p.at300).replace('{total}', p.total).replace('{flatAt}', p.flatAt)
         fb.replaceChildren(feedback(text, 'good')); audio.play('pass'); next.hidden = false
-        teach(text, 'good')
+        teach((gain >= 3 ? S().enough.stillRisingPop : S().enough.flatPop).replace('{flatAt}', p.flatAt).replace('{at300}', p.at300).replace('{now}', p.now), 'good')
       } })
     }, { primary: true, id: 'more' })
     return panel({ title: S().enough.title, lead: S().enough.lead, note: S().enough.note, body: [wrap, initial, counters, fb], actions: [moreBtn, next] })
@@ -356,7 +368,7 @@ export async function showLevel(app) {
           status.textContent = S().steps[7].idle
           lv.evaluated = { before: { contacts: bc, legal: bl }, after: { contacts: ac, legal: al } }; app.save()
           runBtn.disabled = false; skip.disabled = true; next.hidden = false; audio.play('pass')
-          teach(text, al > bl ? 'good' : 'info')
+          teach(S().steps[7].pop.replace('{b}', bl).replace('{a}', al), al > bl ? 'good' : 'info')
           return
         }
         const a = R.ACTIONS[item.o.action]
@@ -376,9 +388,23 @@ export async function showLevel(app) {
 
   function showRealGame() {
     const r = S().realGame
-    const m = modal({ title: r.title, lines: [r.intro, r.steps, r.outro], warn: r.warn, actions: [button(STR.common.close, () => m.remove(), { primary: true, id: 'close-real-game' })] })
+    const status = el('div')
+    const startBtn = button(r.start, async () => {
+      startBtn.disabled = true
+      status.replaceChildren(feedback(r.starting, 'info'))
+      try {
+        const res = await fetch('./launch', { method: 'POST' })
+        const j = await res.json().catch(() => ({}))
+        if (res.ok) { status.replaceChildren(feedback(j.started ? r.started : r.alreadyRunning, 'good')); audio.play('pass') }
+        else status.replaceChildren(feedback(r.failed.replace('{why}', j.error ?? res.status), 'bad'))
+      } catch { status.replaceChildren(feedback(r.noLauncher, 'bad')) }
+      startBtn.disabled = false
+    }, { primary: true, id: 'start-real-game' })
+    const m = modal({ title: r.title, lines: [r.intro, r.steps, r.outro], warn: r.warn, actions: [startBtn, button(STR.common.close, () => m.remove(), { id: 'close-real-game' })] })
     const pre = el('pre', 'cmd', r.commands.join('\n'))
-    m.querySelector('.box').insertBefore(pre, m.querySelector('.box .row'))
+    const box = m.querySelector('.box')
+    box.insertBefore(pre, box.querySelector('.row'))
+    box.insertBefore(status, box.querySelector('.row'))
     m.dataset.modal = 'real-game'
     app.ui.append(m)
   }

@@ -13,10 +13,12 @@ source of direction). Founding intent: [note.md](note.md). Physical activity gui
 ## Play the game
 
 ```sh
-cd game && python3 -m http.server 8000
+python3 game/serve.py
 ```
 
-Open <http://127.0.0.1:8000> (add `?dev=1` for the fps overlay). Works with mouse, touch and
+Open <http://127.0.0.1:8000> (add `?dev=1` for the fps overlay). `serve.py` is a plain static server plus
+one endpoint that lets the "Play the real pong game" card start `bracket_pong.play` for you
+(`cd game && python3 -m http.server 8000` works too, minus that button). Works with mouse, touch and
 keyboard; progress is saved in the browser. See [game/README.md](game/README.md) for the
 layout, tests and deployment.
 

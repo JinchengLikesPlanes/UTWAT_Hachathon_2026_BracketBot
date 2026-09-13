@@ -142,3 +142,12 @@ canvas.graph.half { height: 110px; }
 canvas.graph.probs { height: 80px; }
 pre.cmd { background: #0c1017; border: 1px solid var(--panel-border); border-radius: 10px; padding: 10px 12px; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-x: auto; white-space: pre; margin: 0; color: #cfe3ff; }
 .modal .box ol { margin: 0; padding-left: 20px; color: var(--muted); }
+
+.focus-wrap { position: absolute; inset: 60px 0 0 0; display: grid; place-items: center; padding: 8px 16px 16px; backdrop-filter: blur(7px) brightness(.7); -webkit-backdrop-filter: blur(7px) brightness(.7); animation: fadein .25s; }
+.panel.focus { position: relative; inset: auto; width: min(680px, 100%); max-height: 100%; font-size: 17px; animation: popin .35s cubic-bezier(.2,1.2,.4,1); }
+.panel.focus h2 { font-size: 24px; }
+.panel.focus .btn { font-size: 17px; }
+@media (max-width: 699px) { .focus-wrap { padding: 4px 8px 8px; } .panel.focus { font-size: 16px; } }
+.modal.pop .box { align-items: center; text-align: center; }
+.modal.pop .lead { font-size: 22px; font-weight: 700; }
+.modal.pop .row { justify-content: center; }

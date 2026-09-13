@@ -80,6 +80,15 @@ export function showHub(app) {
 
   app.view.lookAt([1.6, 1.9, 4.6], [-1.7, 1.5, 0], { width: 2.0, height: 1.8 })
   app.robot.group.position.set(0, 0, 0)
+  // idle: a friendly wave with the right arm
+  let t = 0
+  app.tick = dt => {
+    t += dt
+    app.robot.setJoint('rj1', 1.3)
+    app.robot.setJoint('rj2', 0.35 * Math.sin(t * 4))
+    app.robot.setJoint('rj3', -0.6 + 0.3 * Math.sin(t * 4 + 1))
+    app.robot.setJoint('lj1', 0.15 * Math.sin(t * 1.3))
+  }
 }
 
 export function showReal(app, id) {

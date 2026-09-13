@@ -6,14 +6,19 @@ URDF, three pure simulations, a DOM overlay. No build step, no server logic.
 ## Run
 
 ```sh
-cd game && python3 -m http.server 8000      # http://127.0.0.1:8000  (?dev=1 → fps overlay)
+python3 game/serve.py                        # http://127.0.0.1:8000  (?dev=1 → fps overlay)
 ```
+
+`serve.py` = static server + `POST /launch`, which starts the desktop pong game
+(`.venv/bin/python -m bracket_pong.play`) when the player presses "Start the pong game".
+Any static server works for everything else.
 
 ## Layout
 
 | Path | What |
 |---|---|
 | `index.html`, `main.js` | page, boot, router, fixed-step loop |
+| `serve.py` | local server + pong-game launcher |
 | `logic.js` | platform stub (solo game) |
 | `strings.js` | every player-visible string |
 | `state.js`, `rng.js` | localStorage progress (`bb-game-v1`), seeded PRNG |

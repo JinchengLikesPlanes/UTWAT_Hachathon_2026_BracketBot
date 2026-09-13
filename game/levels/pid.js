@@ -8,6 +8,7 @@ import { mountLevel, advance, conceptCheck, badgeScreen } from './common.js'
 import { audio } from '../audio.js'
 
 const S = () => STR.pid
+const P = () => STR.pid.pop
 const EXAM = ['push', 'long_push', 'steady_pull']
 
 export async function showLevel(app) {
@@ -48,9 +49,15 @@ export async function showLevel(app) {
   }
 
   // --- playback ---
-  let play = null
+  let play = null, idleT = 0
   app.tick = dt => {
-    if (!play || play.done) return
+    if (!play) {
+      // idle: the tiny corrections of a real balancer at rest (wheels shuffle, mast sways ~1°)
+      idleT += dt
+      setPose(0.012 * Math.sin(idleT * 3.1) + 0.006 * Math.sin(idleT * 7.3), 0.018 * Math.sin(idleT * 3.1 + 1.2) + 0.008 * Math.sin(idleT * 9.1))
+      return
+    }
+    if (play.done) return
     play.t += dt * play.speed
     const idx = Math.min(play.trajectory.length - 1, Math.floor(play.t / DT))
     const p = play.trajectory[idx]
@@ -120,7 +127,7 @@ export async function showLevel(app) {
             { id: 'tail', label: S().metrics.tail, value: `${m.tailErrorCm} cm`, kind: m.stable ? 'good' : m.fallen ? 'bad' : '' },
           ]))
           const v = opts.onResult(m, { gains: { ...gains }, disturbance })
-          if (v) { fb.append(feedback(v.text, v.kind)); popup({ text: v.text, kind: v.kind, closeLabel: STR.common.gotIt }) }
+          if (v) { fb.append(feedback(v.text, v.kind)); popup({ text: v.pop ?? v.text, kind: v.kind, closeLabel: STR.common.gotIt }) }
           if (v?.pass) { next.hidden = false; audio.play('pass') }
         },
       }
@@ -135,34 +142,34 @@ export async function showLevel(app) {
   const steps = {
     1: () => experiment({
       title: S().steps[1].title, lead: S().steps[1].lead, note: S().steps[1].note, sliders: [], disturbance: 'none',
-      onResult: m => { lv.fallNone = m.fellAt; app.save(); return { pass: true, kind: 'info', text: S().steps[1].result.replace('{t}', m.fellAt?.toFixed(1) ?? '?') } },
+      onResult: m => { lv.fallNone = m.fellAt; app.save(); return { pass: true, kind: 'info', text: S().steps[1].result.replace('{t}', m.fellAt?.toFixed(1) ?? '?'), pop: P().fell.replace('{t}', m.fellAt?.toFixed(1) ?? '?') } },
       onNext: () => { advance(app, 'pid', 2); go(2) },
     }),
     2: () => experiment({
       title: S().steps[2].title, lead: S().steps[2].lead, note: S().steps[2].note, sliders: ['kp'], disturbance: 'none',
       onResult: (m, run) => {
-        if (run.gains.kp <= 0) return { pass: false, kind: 'bad', text: S().steps[2].needP }
-        if (!m.fallen) return { pass: true, kind: 'good', text: S().steps[2].stood }
-        return { pass: true, kind: 'info', text: S().steps[2].result.replace('{t}', m.fellAt.toFixed(1)).replace('{t0}', (lv.fallNone ?? 1.4).toFixed(1)) }
+        if (run.gains.kp <= 0) return { pass: false, kind: 'bad', text: S().steps[2].needP, pop: P().need.replace('{gain}', 'P') }
+        if (!m.fallen) return { pass: true, kind: 'good', text: S().steps[2].stood, pop: P().stood }
+        return { pass: true, kind: 'info', text: S().steps[2].result.replace('{t}', m.fellAt.toFixed(1)).replace('{t0}', (lv.fallNone ?? 1.4).toFixed(1)), pop: P().fellLater.replace('{t}', m.fellAt.toFixed(1)).replace('{t0}', (lv.fallNone ?? 1.4).toFixed(1)) }
       },
       onNext: () => { advance(app, 'pid', 3); go(3) },
     }),
     3: () => experiment({
       title: S().steps[3].title, lead: S().steps[3].lead, note: S().steps[3].note, sliders: ['kp', 'kd'], disturbance: 'push',
       onResult: (m, run) => {
-        if (run.gains.kd <= 0) return { pass: false, kind: 'bad', text: S().steps[3].needD }
-        if (m.fallen) return { pass: false, kind: 'bad', text: S().steps[3].fell.replace('{t}', m.fellAt.toFixed(1)) }
-        return { pass: true, kind: 'good', text: S().steps[3].result.replace('{wobble}', m.wobbleDeg).replace('{drift}', m.maxErrorCm) }
+        if (run.gains.kd <= 0) return { pass: false, kind: 'bad', text: S().steps[3].needD, pop: P().need.replace('{gain}', 'D') }
+        if (m.fallen) return { pass: false, kind: 'bad', text: S().steps[3].fell.replace('{t}', m.fellAt.toFixed(1)), pop: P().fell.replace('{t}', m.fellAt.toFixed(1)) }
+        return { pass: true, kind: 'good', text: S().steps[3].result.replace('{wobble}', m.wobbleDeg).replace('{drift}', m.maxErrorCm), pop: P().standDrift.replace('{drift}', m.maxErrorCm) }
       },
       onNext: () => { advance(app, 'pid', 4); go(4) },
     }),
     4: () => experiment({
       title: S().steps[4].title, lead: S().steps[4].lead, note: S().steps[4].note, sliders: ['kp', 'kd', 'kh'], disturbance: 'push',
       onResult: (m, run) => {
-        if (run.gains.kh <= 0) return { pass: false, kind: 'bad', text: S().steps[4].needH }
-        if (m.fallen) return { pass: false, kind: 'bad', text: S().steps[4].fell }
-        if (m.stable) return { pass: true, kind: 'good', text: S().steps[4].result.replace('{tail}', m.tailErrorCm) }
-        return { pass: false, kind: 'bad', text: S().steps[4].notYet.replace('{tail}', m.tailErrorCm) }
+        if (run.gains.kh <= 0) return { pass: false, kind: 'bad', text: S().steps[4].needH, pop: P().need.replace('{gain}', 'Hold') }
+        if (m.fallen) return { pass: false, kind: 'bad', text: S().steps[4].fell, pop: P().fell.replace('{t}', m.fellAt.toFixed(1)) }
+        if (m.stable) return { pass: true, kind: 'good', text: S().steps[4].result.replace('{tail}', m.tailErrorCm), pop: P().back.replace('{tail}', m.tailErrorCm) }
+        return { pass: false, kind: 'bad', text: S().steps[4].notYet.replace('{tail}', m.tailErrorCm), pop: P().off.replace('{tail}', m.tailErrorCm) }
       },
       onNext: () => { advance(app, 'pid', 5); go(5) },
     }),
@@ -188,13 +195,14 @@ export async function showLevel(app) {
       onResult: (m, run) => {
         board[run.disturbance] = m
         refresh()
-        if (EXAM.every(id => board[id]?.stable)) return { pass: true, kind: 'good', text: S().steps[5].result }
+        if (EXAM.every(id => board[id]?.stable)) return { pass: true, kind: 'good', text: S().steps[5].result, pop: P().passedAll }
         if (!m.stable) {
           lv.examFails = (lv.examFails ?? 0) + 1; app.save()
           if (lv.examFails >= 3) hint.replaceChildren(feedback(S().steps[5].hint.replace('{kp}', REFERENCE_GAINS.kp).replace('{kd}', REFERENCE_GAINS.kd).replace('{kh}', REFERENCE_GAINS.kh).replace('{ki}', REFERENCE_GAINS.ki), 'info'))
-          return { pass: false, kind: 'bad', text: (run.disturbance === 'steady_pull' && run.gains.ki <= 0 ? S().steps[5].needI : S().steps[5].failed).replace('{tail}', m.tailErrorCm) }
+          const needI = run.disturbance === 'steady_pull' && run.gains.ki <= 0
+          return { pass: false, kind: 'bad', text: (needI ? S().steps[5].needI : S().steps[5].failed).replace('{tail}', m.tailErrorCm), pop: (m.fallen ? P().fell.replace('{t}', m.fellAt) : needI ? P().needI : P().off).replace('{tail}', m.tailErrorCm) }
         }
-        return { pass: false, kind: 'info', text: S().steps[5].partial }
+        return { pass: false, kind: 'info', text: S().steps[5].partial, pop: P().passedOne }
       },
       onNext: () => go(6),
     })

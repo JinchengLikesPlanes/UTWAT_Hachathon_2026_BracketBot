@@ -29,8 +29,15 @@ export async function showLevel(app) {
   view.scene.add(dressing)
   view.lookAt([1.9, 1.7, 2.3], [0.35, 1.15, 0], { width: 2.2, height: 1.9 })
   const head = makeSpinner(robot, 'head__head__head__head', undefined, false)
-  let nod = 0
-  app.tick = dt => { nod = Math.max(0, nod - dt); head.setAngle(-0.25 * Math.sin(nod * Math.PI * 2) * (nod > 0 ? 1 : 0)) }
+  let nod = 0, idleT = 0
+  app.tick = dt => {
+    nod = Math.max(0, nod - dt); idleT += dt
+    // idle: the head scans slowly, the arms breathe; a nod toward the card overrides when a photo is picked
+    const scan = 0.08 * Math.sin(idleT * 0.9) + 0.03 * Math.sin(idleT * 2.7)
+    head.setAngle(nod > 0 ? -0.25 * Math.sin(nod * Math.PI * 2) : scan)
+    robot.setJoint('rj1', 0.12 + 0.05 * Math.sin(idleT * 1.1))
+    robot.setJoint('lj1', 0.12 + 0.05 * Math.sin(idleT * 1.1 + 2))
+  }
   const showOnCard = s => {
     const ctx = cardCanvas.getContext('2d')
     if (s) V.renderSample(s, ctx, 128); else { ctx.fillStyle = '#ddd'; ctx.fillRect(0, 0, 128, 128) }
@@ -112,7 +119,7 @@ export async function showLevel(app) {
           const m = V.trainClassifier(labelled(trainIds))
           lv.model = { weights: m.weights, bias: m.bias }; app.save()
           const text = S().steps[2].done.replace('{acc}', Math.round(m.accuracy * 100)).replace('{n}', m.examples)
-          fb.replaceChildren(feedback(text, 'good')); popup({ text, kind: 'good', closeLabel: STR.common.gotIt })
+          fb.replaceChildren(feedback(text, 'good')); popup({ text: S().steps[2].pop.replace('{acc}', Math.round(m.accuracy * 100)), kind: 'good', closeLabel: STR.common.gotIt })
           audio.play('pass'); next.hidden = false
         } catch (e) { fb.replaceChildren(feedback(S().steps[1].needTwo, 'bad')) }
       }, { primary: true, id: 'train' })
@@ -145,7 +152,7 @@ export async function showLevel(app) {
             { id: 'cmp-hard-before', label: S().steps[4].m.hardBefore, value: `${hardBefore}/6` },
             { id: 'cmp-hard-after', label: S().steps[4].m.hardAfter, value: `${hardAfter}/6`, kind: hardAfter > hardBefore ? 'good' : 'bad' },
           ]), feedback(S().steps[4].done, 'good'))
-          popup({ text: `${S().steps[4].done} ${S().steps[4].m.testBefore}: ${lv.testBefore}/12 → ${S().steps[4].m.testAfter}: ${after}/12. ${S().steps[4].m.hardBefore}: ${hardBefore}/6 → ${S().steps[4].m.hardAfter}: ${hardAfter}/6.`, kind: 'good', closeLabel: STR.common.gotIt })
+          popup({ text: S().steps[4].pop.replace('{tb}', lv.testBefore).replace('{ta}', after).replace('{hb}', hardBefore).replace('{ha}', hardAfter), kind: 'good', closeLabel: STR.common.gotIt })
           audio.play('pass'); p.querySelector('[data-id=next]').hidden = false
         } catch (e) { fb.replaceChildren(feedback(S().steps[1].needTwo, 'bad')) }
       }, { primary: true, id: 'retrain' })

@@ -25,8 +25,8 @@ export function topbar(title, steps, onBack, backLabel) {
 }
 
 // Right-hand (desktop) / bottom (phone) panel. `body` and `actions` are arrays of elements.
-export function panel({ title, lead, note, body = [], actions = [] }) {
-  const p = el('section', 'panel')
+export function panel({ title, lead, note, body = [], actions = [], focus = false }) {
+  const p = el('section', focus ? 'panel focus' : 'panel')
   if (title) p.append(el('h2', '', title))
   if (lead) p.append(el('p', 'lead', lead))
   if (note) p.append(el('p', 'note', note))
@@ -35,6 +35,15 @@ export function panel({ title, lead, note, body = [], actions = [] }) {
   a.append(...actions)
   p.append(a)
   p.actionsEl = a
+  if (focus) {
+    // wrap in a blurred backdrop so the scene (and its idle robot) stays visible but out of the way
+    const wrap = el('div', 'focus-wrap')
+    wrap.append(p)
+    wrap.actionsEl = a
+    wrap.insertBefore = (n, ref) => p.insertBefore(n, ref)
+    wrap.querySelector = sel => p.querySelector(sel)
+    return wrap
+  }
   return p
 }
 

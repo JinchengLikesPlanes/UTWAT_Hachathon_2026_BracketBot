@@ -28,7 +28,7 @@ export function conceptCheck(app, id, q, onPass) {
   const lv = app.state.levels[id]
   const fb = el('div')
   let c
-  const p = panel({ title: STR.common.concept, lead: q.question, body: [] })
+  const p = panel({ title: STR.common.concept, lead: q.question, body: [], focus: true })
   c = choice(q.options, (i, b) => {
     fb.replaceChildren()
     if (i === q.answer) {
@@ -52,7 +52,7 @@ export function conceptCheck(app, id, q, onPass) {
 export function badgeScreen(app, id, text) {
   audio.play('badge')
   const img = el('img', 'badge-img'); img.src = `./assets/spr_badge_${id}.png`; img.alt = STR.common.badgeTitle
-  const p = panel({ title: STR.common.badgeTitle, lead: text, body: [img] })
+  const p = panel({ title: STR.common.badgeTitle, lead: text, body: [img], focus: true })
   p.actionsEl.append(
     button(STR.common.realRobot, () => showReal(app, id), { id: 'real' }),
     button(STR.common.backToHub, () => app.go('hub'), { primary: true, id: 'to-hub' }),
