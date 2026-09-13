@@ -180,4 +180,53 @@ export const STR = {
     },
     badge: 'You set a task, chose senses and controls, designed a reward, trained, and evaluated. Those are the five steps of every RL project — including the real BracketBot.',
   },
+  vision: {
+    title: 'Robot Eyes',
+    labels: { red: 'Red', blue: 'Blue', yellow: 'Yellow' },
+    steps: {
+      1: {
+        title: 'Label the photos',
+        lead: 'BracketBot\'s head camera took 18 photos of coloured balls. It has no idea what colours are. Tap a photo, then tap the colour you see.',
+        note: 'Every label you give becomes one example the robot learns from. Wrong labels teach wrong things.',
+        needTwo: 'The robot needs at least 2 examples of every colour before it can learn.',
+      },
+      2: {
+        title: 'Train',
+        lead: 'Press Train. The robot fits a tiny brain — 12 numbers — to your 18 labelled examples.',
+        note: 'It only looks at the average colour of the middle of each photo. Nothing else.',
+        train: 'Train',
+        done: 'Trained on {n} examples. It gets {acc}% of them right. But that is on photos it has already seen…',
+      },
+      3: {
+        title: 'Test on new photos',
+        lead: 'Here are 12 photos the robot never saw, with different backgrounds and lighting. It got {n} of 12.',
+        note: 'Green ✓ = right, red ✗ = wrong. This is the score that matters.',
+        total: 'Correct',
+      },
+      4: {
+        title: 'Improve it',
+        lead: 'Six tricky photos: dim yellows, purple-ish blues, orange-ish reds. Label them, then train again with 24 examples.',
+        note: 'After retraining, the robot is scored on the same 12 test photos so the comparison is fair.',
+        retrain: 'Train again (24 examples)',
+        done: 'Retrained. Compare the numbers: more examples of the hard cases changed what the robot believes.',
+        m: { testBefore: 'Test before', testAfter: 'Test after', hardBefore: 'Tricky before', hardAfter: 'Tricky after' },
+      },
+      5: {
+        title: 'A real object',
+        lead: 'Now show the robot something real. Take or choose a photo with one red, blue or yellow thing in the middle.',
+        note: 'The robot only reads the middle of the picture (the orange square). Backgrounds and shadows count too.',
+        pick: 'Take / choose a photo',
+        result: 'The robot says: {label} ({pct}% sure).',
+        caveat: 'It has only three answers, so it will call a green apple something. That is not a bug — it is what a 3-class model is.',
+        failed: 'Could not read that image. Try another one.',
+      },
+    },
+    concept: {
+      question: 'Why test the robot on photos it never trained on?',
+      options: ['Because training photos are boring', 'To find out whether it learned the colour, not just those exact photos', 'Because more photos always means a better score'],
+      answer: 1,
+      explain: 'A model can memorise its examples. Only new examples show whether it learned the idea.',
+    },
+    badge: 'You collected data, trained a real classifier, tested it honestly, and improved it with harder examples. The real BracketBot\'s camera uses the same steps.',
+  },
 }

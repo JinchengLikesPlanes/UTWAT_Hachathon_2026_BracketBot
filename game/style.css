@@ -103,3 +103,4 @@ table.rewards { width: 100%; border-collapse: collapse; font-size: 14px; }
 table.rewards th, table.rewards td { padding: 6px 8px; border-bottom: 1px solid var(--panel-border); text-align: left; }
 table.rewards td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
 table.rewards .hl { background: rgba(255,181,71,.12); }
+canvas.preview { width: 160px; height: 160px; border-radius: 10px; border: 2px solid var(--panel-border); align-self: center; }
