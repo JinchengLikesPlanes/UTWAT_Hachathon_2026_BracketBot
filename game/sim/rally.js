@@ -218,3 +218,6 @@ export function oracle(serve) {
   ACTIONS.forEach((a, i) => { const o = simulate(serve, a); const s = (o.contact ? 1 : 0) + (o.legal ? 2 : 0); if (s > bestScore) { bestScore = s; best = i } })
   return best
 }
+
+// Fresh RNG for a training run; keyed by how many episodes the policy has seen so repeats differ.
+export function rngFor(n) { return makeRng(1000 + n) }

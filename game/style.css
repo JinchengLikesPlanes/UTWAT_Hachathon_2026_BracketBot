@@ -98,3 +98,8 @@ canvas.graph { width: 100%; height: 150px; background: #0c1017; border-radius: 1
   canvas.graph { height: 110px; }
   .metric .v { font-size: 17px; }
 }
+
+table.rewards { width: 100%; border-collapse: collapse; font-size: 14px; }
+table.rewards th, table.rewards td { padding: 6px 8px; border-bottom: 1px solid var(--panel-border); text-align: left; }
+table.rewards td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+table.rewards .hl { background: rgba(255,181,71,.12); }
