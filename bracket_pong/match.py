@@ -11,7 +11,7 @@ import torch
 from stable_baselines3 import PPO
 
 from bracket_pong.model import ROOT
-from bracket_pong.play import PlayWindow, PANEL, ACCENT
+from bracket_pong.play import PlayWindow, PAPER, CARD, INK, INK2, INK3, GOOD, BAD
 from bracket_pong.rally import RallySim
 from bracket_pong.rules import MatchScore
 
@@ -216,31 +216,34 @@ class MatchWindow(PlayWindow):
         g=self.game
         mujoco.mjv_updateScene(g.sim.model,g.sim.data,self.options,None,self.camera,mujoco.mjtCatBit.mjCAT_ALL,self.scene)
         mujoco.mjr_render(self.rect((0,0,self.width,self.height)),self.scene,self.context)
-        self.fill((0,0,self.width,84),PANEL)
+        self.panel((0,0,self.width,84),PAPER,edges="b")
         self.text(24,18,"Bracket Pong",large=True)
         self.text(self.width/2-145,20,f"You  {g.score.human:02d}       Robot  {g.score.robot:02d}",large=True)
-        self.text(self.width-230,20,g.difficulty)
-        self.text(self.width-230,49,f"Rally: {g.sim.rules.hits} hits")
-        self.text(24,53,"First to 11, win by two")
+        self.text(self.width-230,20,g.difficulty,color=INK3)
+        self.text(self.width-230,49,f"Rally: {g.sim.rules.hits} hits",color=INK3)
+        self.text(24,53,"First to 11, win by two",color=INK3)
+        tone=INK
         if g.phase=="pre_serve":
-            status="Your serve - press Space" if g.score.server=="human" else "Robot preparing to serve"
+            status="Your serve. Press Space" if g.score.server=="human" else "Robot preparing to serve"
         elif g.phase=="play":
-            status=f"Move the blue paddle. Click to swing. Power: {g.power:.0%}   [ / ]: adjust"
+            status=f"Move your paddle. Click to swing. Power {g.power:.0%}, [ / ] to adjust"
         elif g.phase=="game_over":
-            status=("You win!" if g.score.winner=="human" else "Robot wins!")+"   N: new match   R: replay"
+            tone=GOOD if g.score.winner=="human" else BAD
+            status=("You win." if g.score.winner=="human" else "Robot wins.")+"   N: new match   R: replay"
         else:
-            status=("Your point" if g.sim.rules.winner=="human" else "Robot point")+f" - {g.sim.rules.reason}.  Space: next point"
+            tone=GOOD if g.sim.rules.winner=="human" else BAD
+            status=("Your point." if g.sim.rules.winner=="human" else "Robot point.")+f" {g.sim.rules.reason}.  Space: next point"
         if g.replaying:
-            status="Point replay - R to stop, Space for next point"
-        self.fill((0,self.height-85,self.width,85),PANEL)
-        self.text(24,self.height-72,status)
-        self.text(24,self.height-37,"Right-drag: view   Scroll: zoom   C: reset view   Esc: pause   R: replay   N: new   Q: quit")
+            status,tone="Point replay. R to stop, Space for next point",INK
+        self.panel((0,self.height-85,self.width,85),PAPER,edges="t")
+        self.text(24,self.height-72,status,color=tone)
+        self.text(24,self.height-37,"Right-drag: view   Scroll: zoom   C: reset view   Esc: pause   R: replay   N: new   Q: quit",color=INK3)
         if g.paused:
-            self.fill((self.width/2-220,self.height/2-100,440,200),PANEL)
-            self.text(self.width/2-190,self.height/2-75,"Paused",large=True)
-            self.text(self.width/2-190,self.height/2-25,"Esc: resume     N: new match")
-            self.text(self.width/2-190,self.height/2+10,"1 / 2 / 3: difficulty between points")
-            self.text(self.width/2-190,self.height/2+45,"Q: quit     Right-drag: inspect court")
+            self.panel((self.width/2-220,self.height/2-100,440,200),CARD)
+            self.text(self.width/2-190,self.height/2-75,"Paused.",large=True)
+            self.text(self.width/2-190,self.height/2-25,"Esc: resume     N: new match",color=INK2)
+            self.text(self.width/2-190,self.height/2+10,"1 / 2 / 3: difficulty between points",color=INK2)
+            self.text(self.width/2-190,self.height/2+45,"Q: quit     Right-drag: inspect court",color=INK2)
 
     def run(self):
         previous=time.monotonic();accumulator=0
