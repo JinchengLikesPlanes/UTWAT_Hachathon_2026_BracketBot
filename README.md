@@ -154,7 +154,7 @@ A first PPO policy is now trained for the starter return challenge. After
 unseen starter shots (99.6%)**, versus 0/500 for a stationary paddle. With feed
 spread widened from ±2.5 cm to ±10 cm, it returned 282/500 (56.4%). This is one
 training seed in the simplified simulator, not evidence of full match play or
-hardware transfer. See [TRAINING.md](TRAINING.md) for the evaluation record.
+hardware transfer.
 
 Watch the trained policy on macOS:
 
