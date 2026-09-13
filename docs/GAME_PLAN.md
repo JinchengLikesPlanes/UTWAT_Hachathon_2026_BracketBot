@@ -219,7 +219,7 @@ game/
 
 ### A9. Quality gates
 
-- Unit: `node --test game/tests` — sims deterministic, criteria achievable, FK matches Python.
+- Unit: `node --test 'game/tests/*.test.mjs'` — sims deterministic, criteria achievable, FK matches Python.
 - Browser: `node game/tests/browser.mjs` against `python3 -m http.server 8000` — all three
   levels start→badge, reload keeps progress, no console errors, phone viewport 390×844
   touch-only playable, no 404s.
@@ -243,7 +243,7 @@ control, MuJoCo/PPO in the browser, leaderboards, accounts.
 - Every player-visible string lives in `game/strings.js`.
 - Fixed-timestep sims with seeded RNG; no allocations in the render loop.
 - Commit after every task; commit messages `game: <what>`.
-- Run tests from repo root: `node --test game/tests`.
+- Run tests from repo root: `node --test 'game/tests/*.test.mjs'`.
 
 ### Task 1: Scaffold, seeded RNG, state persistence
 
@@ -258,7 +258,7 @@ import { rng } from '../rng.js';
 test('same seed same sequence', () => { const a = rng(5), b = rng(5); for (let i = 0; i < 20; i++) assert.equal(a(), b()) })
 test('range and int stay in bounds', () => { const r = rng(1); for (let i = 0; i < 1000; i++) { const v = r.range(2, 3); assert.ok(v >= 2 && v < 3); const n = r.int(4); assert.ok(n >= 0 && n < 4 && Number.isInteger(n)) } })
 ```
-- [ ] Run `node --test game/tests` → FAIL (module missing).
+- [ ] Run `node --test 'game/tests/*.test.mjs'` → FAIL (module missing).
 - [ ] Write `game/rng.js` (mulberry32):
 ```js
 export function rng(seed) {
@@ -272,7 +272,7 @@ export function rng(seed) {
 - [ ] Write `game/tests/state.test.mjs` using a fake `localStorage` (`globalThis.localStorage = { store:{}, getItem(k){return this.store[k] ?? null}, setItem(k,v){this.store[k]=v}, removeItem(k){delete this.store[k]} }`): assert `loadState()` returns `defaultState()` when empty, round-trips after `saveState`, and returns defaults (not throws) for corrupt JSON or a different `version`.
 - [ ] Write `game/state.js` (key `bb-game-v1`, try/catch around every storage call).
 - [ ] Write `game/logic.js` (the platform stub from the Higgsfield build reference, `meta.game = "bracketbot-robotics"`), `game/strings.js` (`export const STR = { hub: { title: 'BracketBot Robotics', … } }` — fill as levels are built), `game/index.html` (viewport meta, `<canvas id="c">`, `<div id="ui">`, `<div id="dev" hidden>`, importmap `{"imports":{"three":"./vendor/three/three.module.js"}}`, `<script type="module" src="./main.js">`), `game/main.js` (loads state, renders "hello" text from `STR` into `#ui`).
-- [ ] Run `node --test game/tests` → PASS. Serve `cd game && python3 -m http.server 8000`, open, confirm text and no console errors.
+- [ ] Run `node --test 'game/tests/*.test.mjs'` → PASS. Serve `cd game && python3 -m http.server 8000`, open, confirm text and no console errors.
 - [ ] Commit: `game: scaffold with seeded rng and persisted state`.
 
 ### Task 2: URDF bake tool and robot.json
@@ -284,7 +284,7 @@ export function rng(seed) {
 - [ ] Write `game/tools/bake_urdf.py` with `argparse` (`--urdf`, `--out`), `xml.etree`, numpy FK; mesh name = `Path(filename).stem + '.glb'`; assert each GLB exists in the draco dir; print link/joint counts.
 - [ ] Run `.venv/bin/python game/tools/bake_urdf.py --urdf chopped_urdf_v2/chopped_urdf_v2/urdf/chopped_urdf_v2.urdf --out game/assets/robot/robot.json` → prints `54 links, 53 joints`; copy GLBs.
 - [ ] Add `game/tests/robot_json.test.mjs`: parse `robot.json`, assert 54 links, exactly one link with `parent === null` named `root`, 18 non-fixed joints, every non-null `mesh` file exists under `game/assets/robot/`.
-- [ ] `node --test game/tests` → PASS. Commit: `game: bake URDF into robot.json and ship draco meshes`.
+- [ ] `node --test 'game/tests/*.test.mjs'` → PASS. Commit: `game: bake URDF into robot.json and ship draco meshes`.
 
 ### Task 3: Vendor Three.js and build the robot tree
 

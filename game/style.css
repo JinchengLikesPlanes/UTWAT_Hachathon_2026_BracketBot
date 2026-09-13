@@ -1,0 +1,5 @@
+html, body { margin: 0; height: 100%; overflow: hidden; background: #10141c; color: #f2f4f8; font: 16px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+canvas#c { position: fixed; inset: 0; display: block; }
+#ui { position: fixed; inset: 0; pointer-events: none; }
+#ui > * { pointer-events: auto; }
+#dev { position: fixed; top: 4px; left: 4px; color: #6f6; font: 12px monospace; z-index: 10; }
