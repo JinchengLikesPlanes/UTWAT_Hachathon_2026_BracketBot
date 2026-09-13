@@ -41,21 +41,26 @@ async function pidLevel(page, { touch = false } = {}) {
   const tap = async id => touch ? btn(page, id).tap() : btn(page, id).click()
   await tap('play-pid')
   await page.waitForSelector('button[data-id="run"]')
-  // step 1
-  await runTrial(page); await nextVisible(page); await tap('next')
-  // step 2: P
-  await setSlider(page, 'kp', 6); await runTrial(page); await nextVisible(page)
-  const over = await page.locator('[data-id=over] .v').textContent()
-  ok('pid step2 P-only run', /cm/.test(over), over)
+  // step 1: it falls
+  await runTrial(page); await nextVisible(page)
+  ok('pid step1 falls', /Fell at/.test(await page.locator('[data-id=stood] .v').textContent()))
   await tap('next')
-  // step 3: D
-  await setSlider(page, 'kp', 6); await setSlider(page, 'kd', 1.5); await runTrial(page); await nextVisible(page); await tap('next')
-  // step 4: I on steady pull
-  await setSlider(page, 'kp', 3); await setSlider(page, 'kd', 1); await runTrial(page)
-  ok('pid step4 needs I', await page.locator('.feedback').getAttribute('data-kind') !== 'good')
-  await setSlider(page, 'ki', 0.5); await runTrial(page); await nextVisible(page); await tap('next')
-  // step 5: exam with the reference gains
-  await setSlider(page, 'kp', 3.2); await setSlider(page, 'ki', 0.35); await setSlider(page, 'kd', 1.1)
+  // step 2: P alone still falls, but later
+  await setSlider(page, 'kp', 6); await runTrial(page); await nextVisible(page)
+  ok('pid step2 P alone falls later', /Fell at/.test(await page.locator('[data-id=stood] .v').textContent()))
+  await tap('next')
+  // step 3: D makes it stand
+  await setSlider(page, 'kp', 6); await setSlider(page, 'kd', 5); await runTrial(page); await nextVisible(page)
+  ok('pid step3 stands', (await page.locator('[data-id=stood] .v').textContent()) === 'Yes')
+  await tap('next')
+  // step 4: hold brings it back
+  await runTrial(page)
+  ok('pid step4 needs hold', await page.locator('.feedback').getAttribute('data-kind') !== 'good')
+  await setSlider(page, 'kh', 5); await runTrial(page); await nextVisible(page); await tap('next')
+  // step 5: exam — steady pull without I parks off the line, then reference gains pass
+  await tap('dist-steady_pull'); await runTrial(page)
+  ok('pid exam steady pull needs I', await page.locator('.feedback').getAttribute('data-kind') === 'bad')
+  await setSlider(page, 'kp', 6); await setSlider(page, 'kd', 5); await setSlider(page, 'kh', 5); await setSlider(page, 'ki', 5)
   for (const d of ['push', 'long_push', 'steady_pull']) { await tap(`dist-${d}`); await runTrial(page) }
   await nextVisible(page); await tap('next')
   // concept
@@ -69,41 +74,6 @@ async function pidLevel(page, { touch = false } = {}) {
   await tap('to-hub')
   await page.reload({ waitUntil: 'commit' }); await page.waitForFunction(() => window.bb?.robot)
   ok('pid badge survives reload', (await page.locator('[data-level=pid] .progress').textContent()) === 'Badge earned')
-}
-
-async function rlLevel(page) {
-  await btn(page, 'play-rl').click()
-  await page.waitForSelector('button[data-id="replay-0"]')
-  // step 1: replays exist; pick wrong then right (A is the legal one by construction: order [2,0,1])
-  await btn(page, 'replay-1').click(); await page.waitForTimeout(300)
-  await btn(page, 'choice-1').click()
-  ok('rl step1 wrong pick', await page.locator('.feedback.bad').count() === 1)
-  await btn(page, 'choice-0').click(); await nextVisible(page); await btn(page, 'next').click()
-  // step 2: cards via Move buttons (sense = 1 move, control = 2 moves)
-  for (const id of ['x', 'y', 'vx', 'vy']) await btn(page, `move-${id}`).click()
-  for (const id of ['h', 't']) { await btn(page, `move-${id}`).click(); await btn(page, `move-${id}`).click() }
-  await btn(page, 'check').click(); await nextVisible(page); await btn(page, 'next').click()
-  // step 3: pick the return preset
-  await btn(page, 'preset-return').click(); await nextVisible(page); await btn(page, 'next').click()
-  // step 4: train 300 episodes (~15 s at 20/s)
-  await btn(page, 'train').click()
-  await page.waitForSelector('button[data-id="next"]:not([hidden])', { timeout: 40000 })
-  const ep = await page.locator('[data-id=ep] .v').textContent()
-  ok('rl trained 300', ep === '300/300', ep)
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('bb-game-v1')).levels.rl)
-  ok('rl policy persisted', saved.policy && saved.policy.episodes === 300 && saved.preset === 'return')
-  await btn(page, 'next').click()
-  // step 5: evaluate
-  await btn(page, 'run').click(); await btn(page, 'skip').click()
-  await page.waitForSelector('button[data-id="next"]:not([hidden])', { timeout: 60000 })
-  const al = +(await page.locator('[data-id=a-leg] .v').textContent()), bl = +(await page.locator('[data-id=b-leg] .v').textContent())
-  ok('rl after > before on unseen serves', al > bl, `${bl} → ${al}`)
-  await btn(page, 'next').click()
-  await btn(page, 'choice-1').click(); await nextVisible(page); await btn(page, 'next').click()
-  await page.waitForSelector('button[data-id="to-hub"]')
-  await btn(page, 'to-hub').click()
-  await page.reload({ waitUntil: 'commit' }); await page.waitForFunction(() => window.bb?.robot)
-  ok('rl badge survives reload', (await page.locator('[data-level=rl] .progress').textContent()) === 'Badge earned')
 }
 
 // A 64×64 solid-colour PNG built in the browser (no file on disk needed).

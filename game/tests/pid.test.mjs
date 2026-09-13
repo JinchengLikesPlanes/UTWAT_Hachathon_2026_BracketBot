@@ -2,61 +2,58 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { runTrial, DISTURBANCES, GAIN_LIMITS, REFERENCE_GAINS } from '../sim/pid.js'
 
-const P = kp => ({ kp, ki: 0, kd: 0 })
+const g = (kp = 0, kd = 0, kh = 0, ki = 0) => ({ kp, kd, kh, ki })
+const R = REFERENCE_GAINS
 
-test('reference gains are stable on every disturbance', () => {
-  for (const id of Object.keys(DISTURBANCES)) {
-    const { metrics } = runTrial(REFERENCE_GAINS, id)
-    assert.ok(metrics.stable, `${id}: tail ${metrics.tailErrorCm} cm`)
+test('no controller: the robot falls over within 3 s', () => {
+  const { metrics } = runTrial(g(), 'none')
+  assert.ok(metrics.fallen && metrics.fellAt < 3, JSON.stringify(metrics))
+})
+
+test('P alone fights but still falls — later than with no controller', () => {
+  const none = runTrial(g(), 'push').metrics
+  for (const kp of [3, 6, 10]) {
+    const m = runTrial(g(kp), 'push').metrics
+    assert.ok(m.fallen, `kp=${kp} should still fall`)
+    assert.ok(m.fellAt > none.fellAt + 0.5, `kp=${kp} fell at ${m.fellAt} vs ${none.fellAt}`)
   }
 })
 
-test('P only cannot cancel a steady pull', () => {
-  const { metrics } = runTrial(P(1), 'steady_pull')
-  assert.ok(metrics.tailErrorCm > 5 && !metrics.stable, `tail ${metrics.tailErrorCm}`)
+test('P + D stands; more D means less wobble; it still drifts away', () => {
+  assert.ok(runTrial(g(0, 5), 'push').metrics.fallen, 'D alone falls')
+  const a = runTrial(g(6, 3), 'push').metrics, b = runTrial(g(6, 5), 'push').metrics
+  assert.ok(a.upright && b.upright, JSON.stringify([a, b]))
+  assert.ok(b.wobbleDeg < a.wobbleDeg, `${b.wobbleDeg} vs ${a.wobbleDeg}`)
+  assert.ok(!b.stable && b.maxErrorCm > 15, `should drift: ${JSON.stringify(b)}`)
 })
 
-test('high P alone rings visibly on a push', () => {
-  const { metrics, trajectory } = runTrial(P(8), 'push')
-  assert.ok(metrics.overshootCm >= 3, `overshoot ${metrics.overshootCm}`)
-  let crossings = 0
-  for (let i = 1; i < trajectory.length; i++) if (Math.sign(trajectory[i].x) !== Math.sign(trajectory[i - 1].x) && trajectory[i - 1].x !== 0) crossings++
-  assert.ok(crossings >= 3, `crossings ${crossings}`)
+test('hold brings it back to the line after a push', () => {
+  const a = runTrial(g(R.kp, R.kd), 'push').metrics, b = runTrial(g(R.kp, R.kd, R.kh), 'push').metrics
+  assert.ok(!a.stable, 'no hold → not on the line')
+  assert.ok(b.stable, `with hold: ${JSON.stringify(b)}`)
 })
 
-test('adding D reduces overshoot', () => {
-  const a = runTrial(P(8), 'push').metrics
-  const b = runTrial({ kp: 8, ki: 0, kd: 2 }, 'push').metrics
-  assert.ok(b.overshootCm < a.overshootCm, `${b.overshootCm} vs ${a.overshootCm}`)
+test('steady pull: hold alone leaves an offset, I removes it', () => {
+  const a = runTrial(g(R.kp, R.kd, R.kh), 'steady_pull').metrics, b = runTrial(R, 'steady_pull').metrics
+  assert.ok(a.upright && a.tailErrorCm > 15, `no I: ${JSON.stringify(a)}`)
+  assert.ok(b.stable, `with I: ${JSON.stringify(b)}`)
 })
 
-test('I removes the steady offset', () => {
-  const a = runTrial({ kp: 3, ki: 0, kd: 1 }, 'steady_pull').metrics
-  const b = runTrial({ kp: 3, ki: 0.5, kd: 1 }, 'steady_pull').metrics
-  assert.ok(!a.stable && a.tailErrorCm > 5, `no I: ${a.tailErrorCm}`)
-  assert.ok(b.stable, `with I: ${b.tailErrorCm}`)
+test('reference gains pass all three exam disturbances', () => {
+  for (const id of ['push', 'long_push', 'steady_pull']) {
+    const { metrics } = runTrial(R, id)
+    assert.ok(metrics.stable, `${id}: ${JSON.stringify(metrics)}`)
+  }
 })
 
-test('zero gains: the robot drifts away and stays away', () => {
-  const { metrics } = runTrial(P(0), 'push')
-  assert.ok(metrics.maxErrorCm > 10)
-  assert.ok(!metrics.stable)
-})
-
-test('deterministic', () => {
-  assert.deepEqual(runTrial(REFERENCE_GAINS, 'push'), runTrial(REFERENCE_GAINS, 'push'))
-})
-
-test('trajectory shape', () => {
-  const { trajectory } = runTrial(REFERENCE_GAINS, 'push')
+test('deterministic, right shape, limits enforced', () => {
+  assert.deepEqual(runTrial(R, 'push'), runTrial(R, 'push'))
+  const { trajectory } = runTrial(R, 'push')
   assert.equal(trajectory.length, 400)
-  for (const k of ['t', 'x', 'output', 'p', 'i', 'd', 'force']) assert.ok(k in trajectory[0], k)
-})
-
-test('gains outside limits throw', () => {
-  assert.throws(() => runTrial({ kp: 9, ki: 0, kd: 0 }, 'push'))
-  assert.throws(() => runTrial({ kp: 1, ki: -1, kd: 0 }, 'push'))
-  assert.throws(() => runTrial({ kp: 1, ki: 0, kd: 5 }, 'push'))
-  assert.throws(() => runTrial(P(1), 'nope'))
-  assert.deepEqual(GAIN_LIMITS, { kp: [0, 8], ki: [0, 2], kd: [0, 4] })
+  for (const k of ['t', 'th', 'x', 'p', 'd', 'hold', 'i', 'force', 'fallen']) assert.ok(k in trajectory[0], k)
+  assert.throws(() => runTrial(g(11), 'push'))
+  assert.throws(() => runTrial(g(1, -1), 'push'))
+  assert.throws(() => runTrial(g(1), 'nope'))
+  assert.deepEqual(Object.keys(GAIN_LIMITS), ['kp', 'kd', 'kh', 'ki'])
+  assert.ok('none' in DISTURBANCES)
 })

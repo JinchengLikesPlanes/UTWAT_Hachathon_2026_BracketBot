@@ -81,15 +81,24 @@ export async function buildRobot(json, { loadMesh } = {}) {
   return { group, links, joints, setJoint }
 }
 
-// Spin a link's visual about an axis given in the robot's root frame, pivoting on the mesh's own centre.
-// Used for the wheels: the URDF fixes them (they are not joints), so the game rotates the tyre mesh.
-export function makeSpinner(robot, linkName, axisRoot = new THREE.Vector3(0, 1, 0)) {
+// The wheel axle in the root frame: base_plate's origin (x, z); the axle runs along root Y.
+export const AXLE = { x: 0.0113, z: 0.0776 }
+
+// Spin a link's visual about an axis given in the robot's root frame. The pivot is the mesh's
+// bounding-box centre projected onto the axle line (so a tyre turns about the axle, not its own
+// bounding box). Used for the wheels: the URDF fixes them, so the game rotates the tyre mesh.
+export function makeSpinner(robot, linkName, axisRoot = new THREE.Vector3(0, 1, 0), onAxle = true) {
   const link = robot.links.get(linkName)
   const holder = link.children.find(c => c.name.endsWith(':visual'))
   if (!holder) return { setAngle() {} }
   robot.group.updateMatrixWorld(true)
   const box = new THREE.Box3().setFromObject(holder, true)
   const centreWorld = box.getCenter(new THREE.Vector3())
+  if (onAxle) {
+    const centreRoot = robot.group.worldToLocal(centreWorld.clone())
+    centreRoot.x = AXLE.x; centreRoot.z = AXLE.z
+    robot.group.localToWorld(centreWorld.copy(centreRoot))
+  }
   const centreLocal = link.worldToLocal(centreWorld.clone())
   const rootQuat = robot.group.getWorldQuaternion(new THREE.Quaternion())
   const linkQuat = link.getWorldQuaternion(new THREE.Quaternion())

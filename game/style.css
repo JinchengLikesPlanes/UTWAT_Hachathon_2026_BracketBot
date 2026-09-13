@@ -106,3 +106,8 @@ table.rewards td.num { text-align: right; font-variant-numeric: tabular-nums; fo
 table.rewards .hl { background: rgba(255,181,71,.12); }
 canvas.preview { width: 160px; height: 160px; border-radius: 10px; border: 2px solid var(--panel-border); align-self: center; }
 .badge-img { width: 140px; height: 140px; align-self: center; }
+.graphs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.graphwrap { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.graphlabel { font-size: 12px; color: var(--muted); }
+canvas.graph.half { height: 110px; }
+@media (max-width: 699px) { canvas.graph.half { height: 90px; } }

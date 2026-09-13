@@ -67,30 +67,33 @@ Hub ─┬─ Level 1  Hold the Line   (PID)      5 steps → badge
 - Every level ends with a one-question concept check (multiple choice, retry allowed) and a
   "Try it on the real BracketBot" card (text from `docs/CLASSROOM_LABS.md`).
 
-### A3. Level 1 — Hold the Line (PID)
+### A3. Level 1 — Hold the Line (PID) — *revised 2026-09-13: balancing robot*
 
-Scene: BracketBot on a floor with a target marker; chassis moves along one axis via wheels
-(wheel links spin with travel). Live graph (position vs target, 8 s) + P/I/D contribution bars.
+Scene: BracketBot on a floor with a target line, seen from the side; the whole robot tips about
+its wheel axle and rolls along one axis (camera follows). Two live graphs (tilt in degrees,
+distance from the line in cm) + P/D/Hold/I contribution readouts.
 
-Sim (`sim/pid.js`): 50 Hz control loop over a 1-D chassis model
-`v' = (v_cmd − v)/τ − c·v + F/m`, `x' = v`, with `m = 20 kg`, `τ = 0.15 s`, `c = 0.5 s⁻¹`
-(surrogate values; calibrated in Task 4 so the criteria below hold). PID exactly as the lab:
-error = target − x; derivative on measurement, filtered `d = 0.72·d + 0.28·rate`; integral
-clamped ±0.7 with anti-windup (only accumulate when output is not saturated or error opposes
-output); output saturated to ±0.65 m/s; commanded wheel speed rate-limited 0.8 per tick.
-Gains bounded: `kp ∈ [0, 8]`, `ki ∈ [0, 2]`, `kd ∈ [0, 4]`. Reference gains (3.2, 0.35, 1.1).
+Sim (`sim/pid.js`): the robot is what the real BracketBot is — a two-wheeled inverted pendulum.
+State: tilt θ, tilt rate, wheel position x, speed. The only actuator is wheel acceleration
+(velocity-servoed motors, lag 0.05 s, saturated ±8 m/s²), with 40 ms sensing/actuation latency.
+`θ'' = (g/L) sin θ − (a/L) cos θ − c·θ' + F·H/(M L²)`, `x'' = a`; L = 0.6 m, M = 8 kg, H = 1 m.
+Controller (50 Hz): hold loop `θ_ref = −clamp(kh·x + kv·x' + ki·∫x, ±0.08 rad)` (integrate only
+within 30 cm of the line and while unsaturated), balance loop `a = kp·(θ − θ_ref) + kd·θ'`
+(gyro rate, unfiltered). Slider gains are 0–10 "kid units" scaled by `GAIN_SCALE`
+(kp ×4, kd ×1, kh ×0.01, ki ×0.005). Reference gains P 6, D 5, Hold 5, I 5. A fall (|θ| > 1.4 rad)
+freezes the run. Every run starts with a 0.03 rad lean.
 
-Disturbances (N, start s, end s): push (230, 0.65, 0.73); long push (70, 0.65, 1.25);
-steady pull (22, 0.65, 7.4). Trial = 8 s. Stable = |error| ≤ 5 cm over the last 2 s.
+Disturbances (N at 1 m, start s, end s): push (20, 1.5, 1.58); long push (5, 1.5, 2.1);
+steady pull (0.8, 1.5, 8.0). Trial = 8 s. Stable = upright and |x| ≤ 15 cm over the last 2 s.
 
 | Step | Player does | Pass |
 |---|---|---|
-| 1 See the error | Run with all gains 0, push | Trial ran; player pressed NEXT |
-| 2 Add P | Slide P, run push | Any run with kp > 0 |
-| 3 Add D | Slide D, run push | A run with kd > 0 whose max overshoot < the best P-only run |
-| 4 Add I | Steady pull; slide I | A run with ki > 0 whose final error < 5 cm |
-| 5 Exam | One gain set must pass all three disturbances | All three stable with identical gains |
-| Concept | "Which gain removes a slow, steady offset?" → I | Correct answer |
+| 1 Watch it fall | Run with no controller; gravity wins in ~1.4 s | Trial ran; player pressed NEXT |
+| 2 Add P | Slide P; the robot fights but still falls, later, with growing swings | Any run with kp > 0 |
+| 3 Add D | Slide D; with a quick push | Upright for 8 s (it still drifts away) |
+| 4 Stay on the line | Slide Hold; quick push | Stable (upright, ≤ 15 cm last 2 s) |
+| 5 Exam | One gain set vs. push, long push, steady pull; I unlocked here | All three stable with identical gains |
+| Concept | "Which gain fixes standing still 20 cm off the line under a steady lean?" → I | Correct answer |
 
 After three failed exam attempts, show the reference gains as a hint; the player must still run.
 

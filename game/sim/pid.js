@@ -1,69 +1,86 @@
-// Level 1 physics: a 1-D BracketBot chassis under a PID position hold.
+// Level 1 physics: BracketBot as what it really is — a two-wheeled inverted pendulum.
 //
-// The PID law, gain limits, disturbances, trial length and the "stable" criterion are the
-// same as the Learning Lab (bracket_pong/education/pid.py), which runs them in MuJoCo.
-// The chassis here is a calibrated surrogate:
-//   v' = (v_cmd − v) / TAU − DRAG·v + F / MASS,   x' = v
-// plus a sensing/actuation latency of DELAY_TICKS control ticks (without it a P-only loop
-// never rings, which hides the point of D).
-// Calibrated values (Task 4): MASS = 20 kg, TAU = 0.15 s, DRAG = 0.5 s⁻¹, DELAY_TICKS = 4 (80 ms).
-// With these: kp=8 alone rings +8 → −5 → +2 cm; kd=2 cuts the overshoot to ~3 cm; kd=4 limit-cycles;
-// kp=3 alone leaves a 5.5 cm offset under the steady pull that ki=0.5 removes.
+// State: tilt θ (rad, + = leaning forward), tilt rate, wheel position x (m), wheel speed.
+// The only actuator is wheel acceleration `a` (velocity-servoed motors with lag TAU, saturated).
+//   θ'' = (g/L)·sin θ − (a/L)·cos θ − C_T·θ' + F·H/(M·L²)      (F = disturbance at height H)
+//   x'' = a
+// Controller (50 Hz, with DELAY_TICKS of sensing/actuation latency):
+//   hold loop:     θ_ref = −clamp(kh·x + kv·x' + ki·∫x, ±TILT_REF_MAX)   (lean toward the line)
+//   balance loop:  a_cmd = kp·(θ − θ_ref) + kd·θ'                      (chase the lean)
+// Slider gains are "kid units" 0–10 and scaled by GAIN_SCALE. A fall (|θ| > FALL_RAD) freezes the run.
+// Calibrated values recorded below; see tests/pid.test.mjs for the criteria they satisfy.
 
-export const DT = 0.02             // 50 Hz control loop
+export const DT = 0.02
+export const G = 9.81
+export const L = 0.6            // centre-of-mass height above the axle (m)
+export const M = 8              // mass above the axle (kg)
+export const H = 1.0            // height where pushes are applied (m)
+export const C_T = 0.3          // tilt damping (bearings, air)
+export const TAU = 0.05         // motor velocity-servo lag (s)
+export const A_MAX = 8          // wheel acceleration limit (m/s²)
+export const DELAY_TICKS = 2    // 40 ms sensing + actuation latency
 export const WHEEL_RADIUS = 0.0846
-export const MASS = 20
-export const TAU = 0.15
-export const DRAG = 0.5
-export const DELAY_TICKS = 4   // sensing + motor latency, in control ticks
+export const FALL_RAD = 1.4     // beyond this the mast is on the floor
+export const TILT_REF_MAX = 0.08
+export const INIT_TILT = 0.03   // every run starts with a tiny lean, like a real robot let go
 
-export const GAIN_LIMITS = { kp: [0, 8], ki: [0, 2], kd: [0, 4] }
-export const REFERENCE_GAINS = { kp: 3.2, ki: 0.35, kd: 1.1 }
+export const GAIN_LIMITS = { kp: [0, 10], kd: [0, 10], kh: [0, 10], ki: [0, 10] }
+export const GAIN_SCALE = { kp: 4, kd: 1, kh: 0.01, ki: 0.005 }
+export const KV_PER_KH = 2       // hold-loop damping tied to its P
+export const REFERENCE_GAINS = { kp: 6, kd: 5, kh: 5, ki: 5 }
 
 export const DISTURBANCES = {
-  push: { force: 230, start: 0.65, end: 0.73 },
-  long_push: { force: 70, start: 0.65, end: 1.25 },
-  steady_pull: { force: 22, start: 0.65, end: 7.4 },
+  push: { force: 20, start: 1.5, end: 1.58 },
+  long_push: { force: 5, start: 1.5, end: 2.1 },
+  steady_pull: { force: 0.8, start: 1.5, end: 8.0 },
+  none: { force: 0, start: 0, end: 0 },
 }
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v))
 
 export function checkGains(g) {
-  for (const k of ['kp', 'ki', 'kd']) {
+  for (const k of Object.keys(GAIN_LIMITS)) {
     const [lo, hi] = GAIN_LIMITS[k]
-    if (!(typeof g[k] === 'number' && g[k] >= lo && g[k] <= hi)) throw new Error(`gain ${k} outside [${lo}, ${hi}]`)
+    const v = g[k] ?? 0
+    if (!(typeof v === 'number' && v >= lo && v <= hi)) throw new Error(`gain ${k} outside [${lo}, ${hi}]`)
   }
 }
 
-// One control tick of the chassis. state = { x, v }; vCmd in m/s; force in N. Mutates state.
-export function stepChassis(state, vCmd, force, dt = DT) {
-  // Semi-implicit Euler at a sub-step so the 50 Hz command stays stable with a small TAU.
+// One control tick of the body. state = { th, om, x, v, a, fallen }. aCmd in m/s², force in N.
+export function stepBody(s, aCmd, force, dt = DT) {
   const n = 4, h = dt / n
   for (let i = 0; i < n; i++) {
-    const a = (vCmd - state.v) / TAU - DRAG * state.v + force / MASS
-    state.v += a * h
-    state.x += state.v * h
+    if (s.fallen) { s.v = 0; s.om = 0; continue }
+    s.a += (clamp(aCmd, -A_MAX, A_MAX) - s.a) * (h / TAU)
+    const al = (G / L) * Math.sin(s.th) - (s.a / L) * Math.cos(s.th) - C_T * s.om + force * H / (M * L * L)
+    s.om += al * h
+    s.th += s.om * h
+    s.v += s.a * h
+    s.x += s.v * h
+    if (Math.abs(s.th) > FALL_RAD) { s.th = Math.sign(s.th) * FALL_RAD; s.fallen = true; s.om = 0; s.v = 0; s.a = 0 }
   }
-  return state
+  return s
 }
 
 export function makeController(gains) {
   checkGains(gains)
-  let integral = 0, derivative = 0, previous = 0, wheel = 0
+  const kp = (gains.kp ?? 0) * GAIN_SCALE.kp, kd = (gains.kd ?? 0) * GAIN_SCALE.kd
+  const kh = (gains.kh ?? 0) * GAIN_SCALE.kh, kv = kh * KV_PER_KH, ki = (gains.ki ?? 0) * GAIN_SCALE.ki
+  let ix = 0, prevTh = INIT_TILT, prevX = 0, dTh = 0, dX = 0
   return {
-    // Returns the commanded chassis speed (m/s) for this tick and the P/I/D contributions.
-    step(position, target) {
-      const rate = (position - previous) / DT
-      derivative = 0.72 * derivative + 0.28 * rate
-      const error = target - position
-      const proposed = clamp(integral + error * DT, -0.7, 0.7)
-      const raw = gains.kp * error + gains.ki * proposed - gains.kd * derivative
-      const command = clamp(raw, -0.65, 0.65)
-      if (Math.abs(raw) <= 0.65 || Math.sign(error) !== Math.sign(raw)) integral = proposed
-      previous = position
-      const wheelTarget = command / WHEEL_RADIUS
-      wheel += clamp(wheelTarget - wheel, -0.8, 0.8)
-      return { vCmd: wheel * WHEEL_RADIUS, output: command, p: gains.kp * error, i: gains.ki * integral, d: -gains.kd * derivative }
+    step(th, x) {
+      const rTh = (th - prevTh) / DT, rX = (x - prevX) / DT
+      dTh = rTh                        // the IMU gyro measures tilt rate directly
+      dX = 0.72 * dX + 0.28 * rX
+      prevTh = th; prevX = x
+      const proposed = clamp(ix + x * DT, -1, 1)
+      const holdRaw = kh * x + kv * dX + ki * proposed
+      const thRef = -clamp(holdRaw, -TILT_REF_MAX, TILT_REF_MAX)
+      // anti-windup: only remember the error while close to the line and the lean request is not capped
+      if (Math.abs(holdRaw) <= TILT_REF_MAX && Math.abs(x) < 0.3) ix = proposed
+      const e = th - thRef
+      const aCmd = kp * e + kd * dTh
+      return { aCmd: clamp(aCmd, -A_MAX, A_MAX), thRef, p: kp * e, d: kd * dTh, hold: -thRef, i: -ki * ix }
     },
   }
 }
@@ -72,35 +89,35 @@ export function runTrial(gains, disturbanceId, seconds = 8) {
   const spec = DISTURBANCES[disturbanceId]
   if (!spec) throw new Error(`unknown disturbance ${disturbanceId}`)
   const ctl = makeController(gains)
-  const state = { x: 0, v: 0 }
+  const s = { th: INIT_TILT, om: 0, x: 0, v: 0, a: 0, fallen: false }
   const queue = new Array(DELAY_TICKS).fill(0)
-  const target = 0
   const trajectory = []
   const ticks = Math.round(seconds / DT)
   for (let k = 0; k < ticks; k++) {
     const t = k * DT
     const force = spec.start <= t && t < spec.end ? spec.force : 0
-    const c = ctl.step(state.x, target)
-    trajectory.push({ t: +t.toFixed(2), x: state.x, output: c.output, p: c.p, i: c.i, d: c.d, force })
-    queue.push(c.vCmd)
-    stepChassis(state, queue.shift(), force)
+    const c = ctl.step(s.th, s.x)
+    trajectory.push({ t: +t.toFixed(2), th: s.th, x: s.x, aCmd: c.aCmd, p: c.p, d: c.d, hold: c.hold, i: c.i, force, fallen: s.fallen })
+    queue.push(c.aCmd)
+    stepBody(s, queue.shift(), force)
   }
-  const abs = trajectory.map(p => Math.abs(p.x))
-  const tail = trajectory.filter(p => p.t >= seconds - 2).map(p => Math.abs(p.x))
-  let peakIdx = 0
-  for (let k = 1; k < abs.length; k++) if (abs[k] > abs[peakIdx]) peakIdx = k
-  const s = Math.sign(trajectory[peakIdx].x) || 1
-  let overshoot = 0
-  for (let k = peakIdx; k < trajectory.length; k++) overshoot = Math.max(overshoot, -s * trajectory[k].x)
-  const cm = v => Math.round(v * 1000) / 10
+  const deg = r => Math.round(Math.abs(r) * 180 / Math.PI * 10) / 10
+  const cm = v => Math.round(Math.abs(v) * 1000) / 10
+  const after = trajectory.filter(p => p.t >= spec.end + 0.3)
+  const tail = trajectory.filter(p => p.t >= seconds - 2)
+  const fellAt = trajectory.find(p => p.fallen)?.t ?? null
   return {
     trajectory,
     metrics: {
-      maxErrorCm: cm(Math.max(...abs)),
-      finalErrorCm: cm(abs[abs.length - 1]),
-      tailErrorCm: cm(Math.max(...tail)),
-      overshootCm: cm(overshoot),
-      stable: Math.max(...tail) <= 0.05,
+      fallen: s.fallen,
+      fellAt,
+      maxTiltDeg: deg(Math.max(...trajectory.map(p => Math.abs(p.th)))),
+      wobbleDeg: after.length ? deg(Math.max(...after.map(p => Math.abs(p.th)))) : 0,
+      maxErrorCm: cm(Math.max(...trajectory.map(p => Math.abs(p.x)))),
+      tailErrorCm: cm(Math.max(...tail.map(p => Math.abs(p.x)))),
+      finalErrorCm: cm(trajectory[trajectory.length - 1].x),
+      upright: !s.fallen,
+      stable: !s.fallen && Math.max(...tail.map(p => Math.abs(p.x))) <= 0.15,
     },
   }
 }
