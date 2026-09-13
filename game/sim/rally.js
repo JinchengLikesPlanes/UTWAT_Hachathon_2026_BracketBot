@@ -169,11 +169,12 @@ export class Policy {
 export const LR = 0.05
 
 // One REINFORCE episode: sample a serve, act, score, update. Returns the outcome (+ reward, action).
-export function trainEpisode(policy, rng, presetId, lr = LR) {
+// explore = false always takes the current best guess — the honest way to show why exploration matters.
+export function trainEpisode(policy, rng, presetId, lr = LR, explore = true) {
   const serve = makeServe(rng)
   const f = features(serve)
   const p = policy.probs(serve)
-  const a = policy.act(serve, rng)
+  const a = explore ? policy.act(serve, rng) : policy.greedy(serve)
   const outcome = simulate(serve, ACTIONS[a])
   const R = rewardFor(outcome, presetId)
   const adv = R - policy.baseline
@@ -186,12 +187,12 @@ export function trainEpisode(policy, rng, presetId, lr = LR) {
   return { ...outcome, reward: R, action: a, serve }
 }
 
-export function train(policy, { episodes = 300, preset = 'return', seed = 1, onEpisode } = {}) {
+export function train(policy, { episodes = 300, preset = 'return', seed = 1, explore = true, onEpisode } = {}) {
   const rng = makeRng(seed)
   const rewards = []
   let contacts = 0, legal = 0
   for (let i = 0; i < episodes; i++) {
-    const o = trainEpisode(policy, rng, preset)
+    const o = trainEpisode(policy, rng, preset, LR, explore)
     rewards.push(o.reward)
     if (o.contact) contacts++
     if (o.legal) legal++

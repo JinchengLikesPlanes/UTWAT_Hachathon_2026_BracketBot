@@ -34,7 +34,9 @@ const runTrial = async page => {
   await btn(page, 'run').click()
   await btn(page, 'skip').click()
   await page.waitForFunction(() => !document.querySelector('button[data-id="run"]').disabled, null, { timeout: 20000 })
+  if (await page.locator('[data-modal=popup]').count()) await btn(page, 'popup-close').click()
 }
+const dismiss = async page => { if (await page.locator('[data-modal=popup]').count()) await btn(page, 'popup-close').click() }
 const nextVisible = page => page.waitForSelector('button[data-id="next"]:not([hidden])', { timeout: 5000 })
 
 async function pidLevel(page, { touch = false } = {}) {
@@ -93,13 +95,13 @@ async function visionLevel(page) {
     for (const id of ids) { await page.locator(`.photo[data-id="${id}"] canvas`).click(); await btn(page, `label-${truth[id]}`).click() }
   }
   await labelAll(); await nextVisible(page); await btn(page, 'next').click()
-  await btn(page, 'train').click(); await nextVisible(page)
+  await btn(page, 'train').click(); await nextVisible(page); await dismiss(page)
   ok('vision trained', await page.locator('.feedback.good').count() === 1)
   await btn(page, 'next').click()
   const total = await page.locator('[data-id=test-total] .v').textContent()
   ok('vision test ≥ 10/12', +total.split('/')[0] >= 10, total)
   await btn(page, 'next').click()
-  await labelAll(); await btn(page, 'retrain').click(); await nextVisible(page)
+  await labelAll(); await btn(page, 'retrain').click(); await nextVisible(page); await dismiss(page)
   const hardAfter = await page.locator('[data-id=cmp-hard-after] .v').textContent()
   ok('vision retrain shows comparison', /\/6/.test(hardAfter), hardAfter)
   await btn(page, 'next').click()
@@ -113,6 +115,8 @@ async function visionLevel(page) {
   await page.reload({ waitUntil: 'commit' }); await page.waitForFunction(() => window.bb?.robot)
   ok('vision badge survives reload', (await page.locator('[data-level=vision] .progress').textContent()) === 'Badge earned')
 }
+
+const closePopup = async page => { await page.waitForSelector('[data-modal=popup]', { timeout: 60000 }); await btn(page, 'popup-close').click() }
 
 async function rlLevel(page) {
   await btn(page, 'play-rl').click()
@@ -128,22 +132,29 @@ async function rlLevel(page) {
   await btn(page, 'check').click(); await nextVisible(page); await btn(page, 'next').click()
   // step 3: pick the return preset
   await btn(page, 'preset-return').click(); await nextVisible(page); await btn(page, 'next').click()
-  // step 4: train 300 episodes (~15 s at 20/s)
-  await btn(page, 'train').click()
-  await page.waitForSelector('button[data-id="next"]:not([hidden])', { timeout: 40000 })
+  // step 4: no exploration first → training learns nothing → back → yes
+  await btn(page, 'explore-no').click(); await nextVisible(page); await btn(page, 'next').click()
+  await btn(page, 'train').click(); await closePopup(page)
+  ok('rl no-exploration learns nothing', await page.locator('.feedback.bad').count() === 1)
+  await btn(page, 'to-explore').click(); await btn(page, 'explore-yes').click(); await btn(page, 'next').click()
+  await btn(page, 'train').click(); await closePopup(page)
   const ep = await page.locator('[data-id=ep] .v').textContent()
   ok('rl trained 300', ep === '300/300', ep)
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('bb-game-v1')).levels.rl)
-  ok('rl policy persisted', saved.policy && saved.policy.episodes === 300 && saved.preset === 'return')
+  ok('rl policy persisted + curve', saved.policy && saved.preset === 'return' && saved.curve.length >= 10)
   await btn(page, 'next').click()
-  // step 5: evaluate
-  await btn(page, 'run').click(); await btn(page, 'skip').click()
-  await page.waitForSelector('button[data-id="next"]:not([hidden])', { timeout: 60000 })
+  // step 6: train 300 more, see the curve
+  await btn(page, 'more').click(); await closePopup(page)
+  ok('rl curve extended to 600', (await page.evaluate(() => JSON.parse(localStorage.getItem('bb-game-v1')).levels.rl.curve.at(-1).episodes)) === 600)
+  await btn(page, 'next').click()
+  // step 7: evaluate (arm tweens; fast-forward)
+  await btn(page, 'run').click(); await btn(page, 'skip').click(); await closePopup(page)
   const al = +(await page.locator('[data-id=a-leg] .v').textContent()), bl = +(await page.locator('[data-id=b-leg] .v').textContent())
   ok('rl after > before on unseen serves', al > bl, `${bl} → ${al}`)
   await btn(page, 'next').click()
   await btn(page, 'choice-1').click(); await nextVisible(page); await btn(page, 'next').click()
   await page.waitForSelector('button[data-id="to-hub"]')
+  await btn(page, 'real-game').click(); ok('rl real-game card', await page.locator('[data-modal=real-game] pre').count() === 1); await btn(page, 'close-real-game').click()
   await btn(page, 'to-hub').click()
   await page.reload({ waitUntil: 'commit' }); await page.waitForFunction(() => window.bb?.robot)
   ok('rl badge survives reload', (await page.locator('[data-level=rl] .progress').textContent()) === 'Badge earned')
@@ -176,7 +187,7 @@ try {
   }
   if (!only || only === 'perf') {
     const { ctx, page } = await open({}, '?dev=1')
-    await page.evaluate(() => { const s = window.bb.state; s.levels.rl.step = 4; localStorage.setItem('bb-game-v1', JSON.stringify(s)) })
+    await page.evaluate(() => { const s = window.bb.state; s.levels.rl.step = 5; s.levels.rl.explore = true; s.levels.rl.preset = 'return'; localStorage.setItem('bb-game-v1', JSON.stringify(s)) })
     await page.reload({ waitUntil: 'commit' }); await page.waitForFunction(() => window.bb?.robot)
     await btn(page, 'play-rl').click(); await page.waitForSelector('button[data-id="train"]')
     await btn(page, 'train').click(); await page.waitForTimeout(4000)

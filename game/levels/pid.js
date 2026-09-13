@@ -1,7 +1,7 @@
 // Level 1 — Hold the Line. BracketBot as a two-wheeled balancer: a real PID cascade
 // (balance P/D over a hold loop with I) drives a calibrated inverted pendulum; playback poses the URDF.
 import { STR } from '../strings.js'
-import { el, button, panel, slider, metrics, graph, feedback } from '../ui.js'
+import { el, button, panel, slider, metrics, graph, feedback, popup } from '../ui.js'
 import { runTrial, DISTURBANCES, GAIN_LIMITS, REFERENCE_GAINS, DT, WHEEL_RADIUS } from '../sim/pid.js'
 import { makeSpinner, AXLE } from '../robot.js'
 import { mountLevel, advance, conceptCheck, badgeScreen } from './common.js'
@@ -120,7 +120,7 @@ export async function showLevel(app) {
             { id: 'tail', label: S().metrics.tail, value: `${m.tailErrorCm} cm`, kind: m.stable ? 'good' : m.fallen ? 'bad' : '' },
           ]))
           const v = opts.onResult(m, { gains: { ...gains }, disturbance })
-          if (v) fb.append(feedback(v.text, v.kind))
+          if (v) { fb.append(feedback(v.text, v.kind)); popup({ text: v.text, kind: v.kind, closeLabel: STR.common.gotIt }) }
           if (v?.pass) { next.hidden = false; audio.play('pass') }
         },
       }

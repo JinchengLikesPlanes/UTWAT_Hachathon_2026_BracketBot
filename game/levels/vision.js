@@ -1,6 +1,6 @@
 // Level 3 — Robot Eyes. Procedural photos, a real softmax classifier trained from the player's labels.
 import { STR } from '../strings.js'
-import { el, button, panel, metrics, feedback } from '../ui.js'
+import { el, button, panel, metrics, feedback, popup } from '../ui.js'
 import * as V from '../sim/vision.js'
 import { makeSpinner } from '../robot.js'
 import { mountLevel, advance, conceptCheck, badgeScreen } from './common.js'
@@ -111,7 +111,8 @@ export async function showLevel(app) {
         try {
           const m = V.trainClassifier(labelled(trainIds))
           lv.model = { weights: m.weights, bias: m.bias }; app.save()
-          fb.replaceChildren(feedback(S().steps[2].done.replace('{acc}', Math.round(m.accuracy * 100)).replace('{n}', m.examples), 'good'))
+          const text = S().steps[2].done.replace('{acc}', Math.round(m.accuracy * 100)).replace('{n}', m.examples)
+          fb.replaceChildren(feedback(text, 'good')); popup({ text, kind: 'good', closeLabel: STR.common.gotIt })
           audio.play('pass'); next.hidden = false
         } catch (e) { fb.replaceChildren(feedback(S().steps[1].needTwo, 'bad')) }
       }, { primary: true, id: 'train' })
@@ -144,6 +145,7 @@ export async function showLevel(app) {
             { id: 'cmp-hard-before', label: S().steps[4].m.hardBefore, value: `${hardBefore}/6` },
             { id: 'cmp-hard-after', label: S().steps[4].m.hardAfter, value: `${hardAfter}/6`, kind: hardAfter > hardBefore ? 'good' : 'bad' },
           ]), feedback(S().steps[4].done, 'good'))
+          popup({ text: `${S().steps[4].done} ${S().steps[4].m.testBefore}: ${lv.testBefore}/12 → ${S().steps[4].m.testAfter}: ${after}/12. ${S().steps[4].m.hardBefore}: ${hardBefore}/6 → ${S().steps[4].m.hardAfter}: ${hardAfter}/6.`, kind: 'good', closeLabel: STR.common.gotIt })
           audio.play('pass'); p.querySelector('[data-id=next]').hidden = false
         } catch (e) { fb.replaceChildren(feedback(S().steps[1].needTwo, 'bad')) }
       }, { primary: true, id: 'retrain' })

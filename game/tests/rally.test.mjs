@@ -46,6 +46,15 @@ test('the contact preset teaches touching', () => {
   assert.ok(r.contacts >= 10, `contacts ${r.contacts}/20`)
 })
 
+test('without exploration the policy learns nothing', () => {
+  const p = new Policy(0)
+  train(p, { episodes: 300, preset: 'return', seed: 1, explore: false })
+  assert.ok(evaluate(p).legal <= 6, 'greedy training should stay bad')
+  const p2 = new Policy(0)
+  train(p2, { episodes: 300, preset: 'return', seed: 1, explore: true })
+  assert.ok(evaluate(p2).legal >= 10)
+})
+
 test('policy round-trips through JSON', () => {
   const p = new Policy(0); train(p, { episodes: 20, seed: 5 })
   const q = Policy.fromJSON(JSON.parse(JSON.stringify(p)))

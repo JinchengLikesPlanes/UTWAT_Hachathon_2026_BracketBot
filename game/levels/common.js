@@ -4,11 +4,14 @@ import { el, button, topbar, panel, choice, feedback, modal } from '../ui.js'
 import { showReal } from '../hub.js'
 import { audio } from '../audio.js'
 
+export const STEPS = { pid: 5, rl: 7, vision: 5 }
+
 export function mountLevel(app, id, title) {
   app.ui.replaceChildren()
   const bar = topbar(title, '', () => app.go('hub'), STR.common.hub)
   app.ui.append(bar)
-  const setStep = n => bar.setSteps(n <= 5 ? STR.common.step.replace('{n}', n) : STR.common.concept)
+  const total = STEPS[id]
+  const setStep = n => bar.setSteps(n <= total ? STR.common.step.replace('{n}', n).replace('{total}', total) : STR.common.concept)
   let current = null
   const show = p => { current?.remove(); current = p; app.ui.append(p) }
   return { bar, setStep, show }

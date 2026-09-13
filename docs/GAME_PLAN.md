@@ -121,14 +121,23 @@ side by side. Training is genuine and may not improve much in 300 episodes; the 
 
 Evaluation: fixed 20-serve "classroom comparison set" (seed 777), before (fresh policy) vs after.
 
+*Revised 2026-09-13 — seven steps, exploration, learning curve, arm tween, pop-ups, real-game card:*
+
 | Step | Player does | Pass |
 |---|---|---|
 | 1 Set the task | Pick the successful outcome from 3 replays (miss / touch into net / legal return) | Correct pick |
-| 2 Senses & controls | Drag 6 cards into "Robot senses" / "Robot controls" | All 6 correct |
-| 3 Choose reward | Toggle presets; see 3 fixed outcomes scored under each | Player viewed both, pressed NEXT |
-| 4 Train | Press TRAIN; watch 300 episodes; may train again or switch preset (restarts from fresh) | One run completed |
-| 5 Evaluate | Run before/after on 20 unseen serves | Ran once |
+| 2 Senses & controls | Sort 6 cards into "Robot senses" / "Robot controls" | All 6 correct |
+| 3 Choose reward | Pick a preset (table shows 3 outcomes scored under both); changing it resets the brain | Picked |
+| 4 Should it explore? | Bars show the policy's certainty over its 15 choices; choose "yes, try uncertain choices" or "no, always best guess" (changing resets the brain) | Chose |
+| 5 Train | 300 serves at 20/s, arm plays every action, bars sharpen; every 20 serves the 20-serve eval is recorded into a learning curve. With "no" exploration the policy is trained greedily and learns nothing — the level says so and offers a way back | One run completed (with exploration) |
+| 6 Was 300 enough? | See the curve (legal returns on unseen serves vs serves trained, orange mark at 300); "Train 300 more" extends it; the summary names where it went flat | Trained more once |
+| 7 Evaluate | 20 unseen serves before/after; the arm tweens from a ready pose to its chosen height/tilt before every serve; a status line narrates "serve n · before/after · arm goes to h cm, t tilt" | Ran once |
 | Concept | "Which number proves the robot returns balls?" → legal returns, not reward | Correct answer |
+| Badge | "Play the real pong game" card: the same five steps as used for the MuJoCo/PPO rally game + the commands to run and train it | — |
+
+Every simulation result also pops up in the middle of the screen (animated) with a "Got it" button, in all three levels.
+
+**Hub:** a Duolingo-style winding path — one big circular node per level (icon → badge when done, pulsing when current), a dotted trail (gold once finished), step dots per level, Play / Real robot buttons.
 
 ### A5. Level 3 — Robot Eyes (Vision)
 

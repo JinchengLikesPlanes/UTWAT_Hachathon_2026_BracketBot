@@ -194,6 +194,21 @@ export function modal({ title, lines = [], warn, actions = [] }) {
   return m
 }
 
+// Teaching pop-up: the result text jumps to the middle of the screen once a simulation ends.
+export function popup({ title, text, kind = 'info', closeLabel, onClose }) {
+  const m = el('div', 'modal pop')
+  const box = el('div', `box ${kind}`)
+  if (title) box.append(el('h2', '', title))
+  box.append(el('p', 'lead', text))
+  const a = el('div', 'row')
+  a.append(button(closeLabel, () => { m.remove(); onClose?.() }, { primary: true, id: 'popup-close' }))
+  box.append(a)
+  m.append(box)
+  m.dataset.modal = 'popup'
+  document.getElementById('ui').append(m)
+  return m
+}
+
 // Gamepad/keyboard focus: D-pad moves among visible buttons, A activates. Called from the main loop.
 let focusIdx = -1, lastPad = 0
 export function pollGamepad() {

@@ -62,18 +62,39 @@ canvas.graph { width: 100%; height: 150px; background: #0c1017; border-radius: 1
 .card .move { margin-left: auto; }
 .cardbank { display: flex; flex-wrap: wrap; gap: 8px; }
 
-.hub { position: absolute; inset: 0; overflow-y: auto; padding: 24px 16px 32px; display: flex; flex-direction: column; align-items: center; gap: 18px; background: linear-gradient(rgba(16,20,28,.25), rgba(16,20,28,.6)), url(./assets/spr_hub_bg.png) center / cover no-repeat; }
+.hub { position: absolute; inset: 0; overflow-y: auto; padding: 24px 16px 32px; display: flex; flex-direction: column; align-items: center; gap: 10px; background: linear-gradient(rgba(16,20,28,.25), rgba(16,20,28,.6)), url(./assets/spr_hub_bg.png) center / cover no-repeat; }
 .hub h1 { margin: 12px 0 0; font-size: clamp(28px, 5vw, 44px); }
-.hub .sub { color: var(--muted); margin: 0 0 8px; text-align: center; }
-.levels { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; width: min(960px, 100%); }
-.level { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
-.level .badge { font-size: 42px; line-height: 1; height: 48px; }
-.level .badge img { height: 48px; width: 48px; }
-.level h2 { margin: 0; font-size: 20px; }
-.level p { margin: 0; color: var(--muted); font-size: 14px; flex: 1; }
-.level .progress { font-size: 13px; color: var(--accent); font-weight: 600; }
-.level .actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.hub .foot { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.hub .sub { color: var(--muted); margin: 0 0 8px; text-align: center; max-width: 640px; }
+.path { position: relative; width: min(760px, 100%); display: flex; flex-direction: column; gap: 28px; padding: 12px 0; }
+.trail { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.trail-bg { fill: none; stroke: #2c3446; stroke-width: 10; stroke-linecap: round; stroke-dasharray: 2 22; }
+.trail-done { fill: none; stroke: var(--accent); stroke-width: 10; stroke-linecap: round; stroke-dasharray: 2 22; }
+.path .row { display: flex; position: relative; }
+.path .row.left { justify-content: flex-start; padding-left: 6%; }
+.path .row.right { justify-content: flex-end; padding-right: 6%; }
+.node { display: flex; align-items: center; gap: 16px; max-width: 460px; }
+.node .circle { width: 96px; height: 96px; border-radius: 50%; border: 6px solid #2c3446; background: #1c2333; display: grid; place-items: center; padding: 0; flex: none; box-shadow: 0 8px 0 #0b0e14; transition: transform .15s; }
+.node .circle:active { transform: translateY(4px); box-shadow: 0 4px 0 #0b0e14; }
+.node .circle .icon { font-size: 44px; line-height: 1; }
+.node .circle img { width: 74px; height: 74px; }
+.node.current .circle { border-color: var(--accent); animation: pulse 1.6s ease-in-out infinite; }
+.node.done .circle { border-color: var(--good); background: #14261b; }
+@keyframes pulse { 0%, 100% { box-shadow: 0 8px 0 #0b0e14, 0 0 0 0 rgba(255,181,71,.55) } 50% { box-shadow: 0 8px 0 #0b0e14, 0 0 0 14px rgba(255,181,71,0) } }
+.node .info { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.node h2 { margin: 0; font-size: 18px; }
+.node p { margin: 0; color: var(--muted); font-size: 13px; }
+.dots { display: flex; gap: 6px; }
+.dot { width: 14px; height: 14px; border-radius: 50%; background: #2c3446; }
+.dot.full { background: var(--good); }
+.dot.now { background: var(--accent); box-shadow: 0 0 0 3px rgba(255,181,71,.3); }
+.node .progress { font-size: 13px; color: var(--accent); font-weight: 600; }
+.node .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.hub .foot { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 12px; }
+@media (max-width: 699px) {
+  .path .row.left, .path .row.right { padding: 0; justify-content: center; }
+  .node { flex-direction: column; text-align: center; align-items: center; }
+  .node .actions { justify-content: center; }
+}
 
 .photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
 .photo { display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
@@ -111,3 +132,13 @@ canvas.preview { width: 160px; height: 160px; border-radius: 10px; border: 2px s
 .graphlabel { font-size: 12px; color: var(--muted); }
 canvas.graph.half { height: 110px; }
 @media (max-width: 699px) { canvas.graph.half { height: 90px; } }
+
+.modal.pop { background: rgba(0,0,0,.35); animation: fadein .25s; }
+.modal.pop .box { animation: popin .45s cubic-bezier(.2,1.4,.4,1); border-width: 2px; }
+.modal.pop .box.good { border-color: var(--good); } .modal.pop .box.bad { border-color: var(--bad); } .modal.pop .box.info { border-color: var(--info); }
+@keyframes popin { 0% { transform: translate(38vw, 0) scale(.4); opacity: 0 } 100% { transform: none; opacity: 1 } }
+@keyframes fadein { from { opacity: 0 } to { opacity: 1 } }
+@media (max-width: 699px) { @keyframes popin { 0% { transform: translate(0, 30vh) scale(.5); opacity: 0 } 100% { transform: none; opacity: 1 } } }
+canvas.graph.probs { height: 80px; }
+pre.cmd { background: #0c1017; border: 1px solid var(--panel-border); border-radius: 10px; padding: 10px 12px; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-x: auto; white-space: pre; margin: 0; color: #cfe3ff; }
+.modal .box ol { margin: 0; padding-left: 20px; color: var(--muted); }
