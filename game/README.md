@@ -28,7 +28,7 @@ page falls back to the system font and nothing else changes.
 | `state.js`, `rng.js` | localStorage progress (`bb-game-v1`), seeded PRNG |
 | `robot.js`, `scene.js` | URDF → Three.js tree (`buildRobot`, `setJoint`, `makeSpinner`), renderer/camera |
 | `ui.js`, `audio.js`, `hub.js` | overlay kit, synthesised SFX, hub (a winding numbered path in mission order with step dots and badges) |
-| `style.css`, `grain.css` | the paper-and-ink design tokens and layout; the animated grain overlay behind the UI |
+| `style.css`, `grain.css` | the paper-and-ink design tokens and layout (`docs/UI_DESIGN.md`); the animated grain overlay behind the UI |
 | `levels/pid.js`, `rl.js`, `vision.js` | the three missions; `levels/common.js` shared plumbing |
 | `sim/pid.js` | 50 Hz PID over a calibrated 1-D chassis (same law/gains/disturbances as the lab) |
 | `sim/rally.js` | 2-D serve, 15-action paddle, linear softmax policy, REINFORCE, 20-serve eval set |
