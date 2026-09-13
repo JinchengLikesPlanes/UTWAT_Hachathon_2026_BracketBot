@@ -11,12 +11,16 @@ from OpenGL.GL import glViewport
 
 from bracket_pong.challenge import Challenge, default_checkpoint
 
-# Court blue, off-white lettering, orange ball, and a blue-grey control bench.
-PANEL = (0.12, 0.19, 0.27, 1)
-PAD = (0.17, 0.28, 0.37, 1)
-ACCENT = (0.97, 0.61, 0.22, 1)
-LINE = (0.33, 0.45, 0.55, 1)
-WHITE = (0.88, 0.94, 0.97, 1)
+# Warm paper and ink, the ramp from docs/UI_DESIGN.md. MuJoCo's overlay has
+# two bitmap fonts and flat rectangles only, so the ramp is carried by shade.
+PAPER = (0.984, 0.973, 0.961, 1)     # #FBF8F5, bands
+CARD = (1, 1, 1, 1)                  # #FFFFFF, surfaces that sit on the page
+HAIRLINE = (0.878, 0.867, 0.855, 1)  # rgba(23,23,23,.12) flattened onto paper
+INK = (0.09, 0.09, 0.09, 1)          # #171717
+INK2 = (0.227, 0.227, 0.227, 1)      # #3A3A3A
+INK3 = (0.42, 0.42, 0.42, 1)         # #6B6B6B, captions and help
+GOOD = (0.18, 0.42, 0.271, 1)        # #2E6B45, the only colour: pass
+BAD = (0.627, 0.251, 0.184, 1)       # #A0402F, fail
 
 
 class PlayWindow:
@@ -43,7 +47,7 @@ class PlayWindow:
         self.camera.azimuth = 125
         self.camera.elevation = -22
         game.env.model.vis.headlight.ambient[:] = 0.4
-        game.env.model.vis.headlight.diffuse[:] = 0.8
+        game.env.model.vis.headlight.diffuse[:] = 0.45
         self.drag = None
         self.last_cursor = (0, 0)
         glfw.set_mouse_button_callback(self.window, self.mouse_button)
@@ -147,18 +151,29 @@ class PlayWindow:
     def fill(self, box, color):
         mujoco.mjr_rectangle(self.rect(box), *color)
 
-    def text(self, x, y, message, width=290, height=32, large=False):
+    def panel(self, box, fill=PAPER, edges="tblr"):
+        # A band or card: flat fill with a 1px hairline on the named edges.
+        x, y, w, h = box
+        self.fill(box, fill)
+        if "t" in edges: self.fill((x, y, w, 1), HAIRLINE)
+        if "b" in edges: self.fill((x, y+h-1, w, 1), HAIRLINE)
+        if "l" in edges: self.fill((x, y, 1, h), HAIRLINE)
+        if "r" in edges: self.fill((x+w-1, y, 1, h), HAIRLINE)
+
+    def text(self, x, y, message, width=290, height=32, large=False, color=INK):
         font = mujoco.mjtFont.mjFONT_BIG if large else mujoco.mjtFont.mjFONT_NORMAL
         fw, fh = glfw.get_framebuffer_size(self.window)
         glViewport(0, 0, fw, fh)
         mujoco.mjr_text(font, message, self.context, x/self.width,
-                       1-(y+(27 if large else 18))/self.height, *WHITE[:3])
+                       1-(y+(27 if large else 18))/self.height, *color[:3])
 
     def slider(self, box, fraction):
         x, y, w, h = box
-        self.fill((x, y+8, w, 5), LINE)
-        self.fill((x, y+8, w*np.clip(fraction, 0, 1), 5), ACCENT)
-        self.fill((x+w*np.clip(fraction, 0, 1)-5, y, 10, h), WHITE)
+        knob = x+w*np.clip(fraction, 0, 1)
+        self.fill((x, y+8, w, 5), HAIRLINE)
+        self.fill((x, y+8, knob-x, 5), INK)
+        self.fill((knob-6, y, 12, h), INK)
+        self.fill((knob-5, y+1, 10, h-2), CARD)
 
     def draw(self):
         self.width, self.height = glfw.get_window_size(self.window)
@@ -170,51 +185,58 @@ class PlayWindow:
         if g.phase != "flight":
             marker = self.scene.geoms[self.scene.ngeom]
             mujoco.mjv_initGeom(marker, mujoco.mjtGeom.mjGEOM_SPHERE, np.array([0.026]*3),
-                                g.target, np.eye(3).ravel(), np.array(ACCENT, dtype=np.float32))
+                                g.target, np.eye(3).ravel(), np.array(INK3, dtype=np.float32))
             self.scene.ngeom += 1
         mujoco.mjr_render(self.rect((0, 0, self.width-328, self.height)), self.scene, self.context)
-        self.fill((self.width-328, 0, 328, self.height), PANEL)
+        self.panel((self.width-328, 0, 328, self.height), PAPER, edges="l")
         x = self.width-304
+        self.panel((0, 0, self.width-328, 96), PAPER, edges="b")
         self.text(24, 20, "Bracket Pong", width=600, height=44, large=True)
-        self.text(24, 62, "Aim a shot. Make the robot miss.", width=600)
-        state = "Paused - P to resume" if g.paused else {
-            "aim": "Choose your shot, then press Space",
-            "flight": "Ball in play",
-            "result": "Robot returns it!" if g.last_outcome == "return" else "Your point!",
+        self.text(24, 62, "Aim a shot. Make the robot miss.", width=600, color=INK2)
+        state, tone = ("Paused. P to resume", INK) if g.paused else {
+            "aim": ("Choose your shot, then press Space", INK),
+            "flight": ("Ball in play", INK),
+            "result": ("Robot returns it.", BAD) if g.last_outcome == "return" else ("Your point.", GOOD),
         }[g.phase]
-        self.text(24, self.height-86, state, width=self.width-380, large=True, height=40)
-        self.text(24, self.height-45, "Right-drag: orbit   Scroll: zoom   P: pause   R: reset score", width=self.width-380)
-        self.text(x, 24, "You")
-        self.text(x+170, 24, "Robot")
+        self.panel((0, self.height-112, self.width-328, 112), PAPER, edges="t")
+        self.text(24, self.height-86, state, width=self.width-380, large=True, height=40, color=tone)
+        self.text(24, self.height-45, "Right-drag: orbit   Scroll: zoom   P: pause   R: reset score", width=self.width-380, color=INK3)
+        self.text(x, 24, "You", color=INK3)
+        self.text(x+170, 24, "Robot", color=INK3)
         self.text(x, 57, f"{g.you:02d}", large=True, height=48)
         self.text(x+170, 57, f"{g.robot:02d}", large=True, height=48)
-        self.text(x, 111, f"{g.you+g.robot} shots completed")
-        self.text(x, 156, "Place your shot", large=True, height=40)
-        self.text(x, 190, "Drag the target. Arrows work too.")
+        self.text(x, 111, f"{g.you+g.robot} shots completed", color=INK3)
+        self.text(x, 156, "Place your shot.", large=True, height=40)
+        self.text(x, 190, "Drag the target. Arrows work too.", color=INK2)
         boxes = self.boxes()
         bx, by, bw, bh = boxes["aim"]
-        self.fill(boxes["aim"], PAD)
+        self.panel(boxes["aim"], CARD)
         for u in (0.25, 0.5, 0.75):
-            self.fill((bx+bw*u, by, 1, bh), LINE)
-            self.fill((bx, by+bh*u, bw, 1), LINE)
+            self.fill((bx+bw*u, by, 1, bh), HAIRLINE)
+            self.fill((bx, by+bh*u, bw, 1), HAIRLINE)
         cx = bx+bw*(g.shot.aim_y/0.5+0.5)
         cy = by+bh*(0.5-g.shot.aim_z/0.4)
-        self.fill((cx-10, cy-2, 20, 4), ACCENT)
-        self.fill((cx-2, cy-10, 4, 20), ACCENT)
-        self.text(bx+8, by+4, "Higher")
-        self.text(bx+8, by+bh-30, "Lower")
-        self.text(x, 405, f"Side {g.shot.aim_y*100:+.0f} cm   Height {g.shot.aim_z*100:+.0f} cm")
-        self.text(x, 432, f"Shot speed    {g.shot.speed:.1f} m/s   (+ / -)")
+        self.fill((cx-10, cy-1, 20, 2), INK)
+        self.fill((cx-1, cy-10, 2, 20), INK)
+        self.text(bx+8, by+4, "Higher", color=INK3)
+        self.text(bx+8, by+bh-30, "Lower", color=INK3)
+        self.text(x, 405, f"Side {g.shot.aim_y*100:+.0f} cm   Height {g.shot.aim_z*100:+.0f} cm", color=INK2)
+        self.text(x, 432, f"Shot speed    {g.shot.speed:.1f} m/s   (+ / -)", color=INK2)
         self.slider(boxes["speed"], (g.shot.speed-1.5)/3.5)
-        self.fill(boxes["mode"], PAD)
+        self.panel(boxes["mode"], CARD)
         self.text(x+8, 509, f'Lift: {"Automatic" if g.auto_lift else "Manual"}   (L to switch)')
         height = 1.03044+g.env.data.qpos[g.env.lq]
-        self.text(x, 547, f"Carriage height    {height:.2f} m")
+        self.text(x, 547, f"Carriage height    {height:.2f} m", color=INK2)
         self.slider(boxes["lift"], 1+g.lift_target/1.03044 if not g.auto_lift else height/1.03044)
-        self.text(x, 607, "Drag to move lift manually. U / J.")
-        self.fill(boxes["launch"], PAD if g.phase == "flight" else (0.38, 0.26, 0.14, 1))
-        self.text(x+12, self.height-99, "Ball in play" if g.phase == "flight" else "Launch shot   [Space]", height=40)
-        self.text(x, self.height-52, "Return challenge" if g.learned_lift else "Arm policy: manual lift only")
+        self.text(x, 607, "Drag to move lift manually. U / J.", color=INK3)
+        # Dark primary button while armed; paper with a hairline while the ball flies.
+        if g.phase == "flight":
+            self.panel(boxes["launch"], PAPER)
+            self.text(x+12, self.height-99, "Ball in play", height=40, color=INK3)
+        else:
+            self.fill(boxes["launch"], INK)
+            self.text(x+12, self.height-99, "Launch shot   [Space]", height=40, color=CARD)
+        self.text(x, self.height-52, "Return challenge" if g.learned_lift else "Arm policy: manual lift only", color=INK3)
 
     def save_frame(self, path):
         from PIL import Image

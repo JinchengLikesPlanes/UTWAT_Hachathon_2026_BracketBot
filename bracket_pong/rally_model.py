@@ -14,7 +14,7 @@ def load_rally_model(mobile=False):
     mount = world.find("body[@name='robot_mount']")
     ET.SubElement(mount, "joint", name="base_y", type="slide", axis="0 1 0", range="-0.45 0.45", damping="5")
     ET.SubElement(mount, "inertial", mass="20", pos="0 0 0.15", diaginertia="1 1 1")
-    ET.SubElement(mount, "geom", name="chassis_guard", type="box", pos="0 0 0.2", size="0.15 0.18 0.12", rgba="0.12 0.18 0.25 1", contype="2", conaffinity="2", mass="0", group="3")
+    ET.SubElement(mount, "geom", name="chassis_guard", type="box", pos="0 0 0.2", size="0.15 0.18 0.12", rgba="0.165 0.153 0.141 1", contype="2", conaffinity="2", mass="0", group="3")
     ET.SubElement(actuators, "velocity", name="base_drive", joint="base_y", kv="120", ctrlrange="-0.8 0.8", forcerange="-45 45")
     world.find("geom[@name='table']").set("conaffinity", "3")
     world.find("geom[@name='table']").set("contype", "3")
@@ -24,7 +24,7 @@ def load_rally_model(mobile=False):
         ("edge_robot","-1.358 0 0.761","0.006 0.7625 0.001"),
         ("edge_human","1.358 0 0.761","0.006 0.7625 0.001"),
         ("center_line","0 0 0.761","1.37 0.003 0.001")):
-        ET.SubElement(world,"geom",name=name,type="box",pos=pos,size=size,rgba="0.85 0.92 0.94 1",contype="0",conaffinity="0",mass="0")
+        ET.SubElement(world,"geom",name=name,type="box",pos=pos,size=size,rgba="0.09 0.09 0.09 1",contype="0",conaffinity="0",mass="0")
     # Conservative capsules between adjacent joint frames, separate from CAD visuals.
     for name in ("shoulder_knuckle__shoulder_knuckle", "bicep__bicep", "forearm__forearm", "forearm_rotation__forearm_rotation", "wrist_knuckle__wrist_knuckle"):
         body = root.find(f".//body[@name='{name}']")
@@ -40,7 +40,7 @@ def load_rally_model(mobile=False):
     for axis, vector in (("pitch", "0 1 0"), ("yaw", "0 0 1")):
         ET.SubElement(human, "joint", name=f"human_{axis}", type="hinge", axis=vector, range="-0.65 0.65", damping="0.02")
         ET.SubElement(actuators, "position", name=f"human_{axis}", joint=f"human_{axis}", kp="20", kv="0.4", ctrlrange="-0.65 0.65", forcerange="-3 3")
-    ET.SubElement(human, "geom", name="human_rubber", type="cylinder", size="0.11 0.008", quat="0.70710678 0 0.70710678 0", rgba="0.12 0.55 0.95 0.85", mass="0")
+    ET.SubElement(human, "geom", name="human_rubber", type="cylinder", size="0.11 0.008", quat="0.70710678 0 0.70710678 0", rgba="0.42 0.42 0.42 0.55", mass="0")
     ET.SubElement(human, "site", name="human_center", size="0.001")
     if mobile:
         # CAD wheel links are fixed and share assembly frames. Extract their

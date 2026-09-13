@@ -313,7 +313,7 @@ uv sync --locked
 ```
 
 This creates `.venv/` with MuJoCo, Gymnasium, Stable-Baselines3, PyTorch and GLFW. Nothing else
-to download: the trained policy (`runs/rally-wheels-match-candidate0/…`) and the robot meshes
+to download: the trained policy (`runs/rally-wheels-sideon-mix0/…`) and the robot meshes
 ship with the repo.
 
 ### 2. Start the game
@@ -337,8 +337,10 @@ The window must be opened from a logged-in desktop session (it needs an OpenGL c
 
 | Input | Action |
 |---|---|
-| Mouse move | Position the blue paddle |
-| Click | Swing |
+| Mouse move | Move your paddle. The cursor is captured while a point is live; motion is relative, like a mouse pong game |
+| `-` / `=` | Mouse sensitivity (default 0.9 mm of paddle per pixel; shown in the status bar) |
+| (nothing) | The paddle swings by itself when the ball reaches it, with the face opened to clear the net. Flick the mouse as it hits to add loft or angle |
+| Click | Swing early, if you want to |
 | `[` / `]` | Decrease / increase swing power |
 | Space | Serve, or start the next point |
 | Right-drag / scroll / `C` | Orbit / zoom / reset the camera (the paddle stays put) |
@@ -353,16 +355,23 @@ The window must be opened from a logged-in desktop session (it needs an OpenGL c
 ```
 
 Without `--model` the game loads the checkpoint named in `runs/wheels-default.json`
-(**Trained wheel RL**, `rally-wheels-match-candidate0` at 150k steps). It legally returned 67/100
-held-out human serves versus 16/100 for the analytic baseline; this is not a full-court coverage
-result. If no compatible checkpoint is found the match falls back to the analytic baseline
+(**Trained wheel RL**, `rally-wheels-sideon-mix0` at 100k steps, fine-tuned from
+`rally-wheels-match-candidate0` in the side-on ready stance). It legally returned 73/100 held-out
+human serves (the previous checkpoint 67/100, the analytic baseline 16/100) and 52 % of stratified
+feeds across the court with no lateral column below 40 % (previously 30 %, with the far column at
+0 %). If no compatible checkpoint is found the match falls back to the analytic baseline
 controller. Restart an already-open window to load a new policy. How the policy was trained is
 described in [How the RL works](#how-the-rl-works).
 
 This is a working experimental game, **not yet a robust full-court opponent**.
 The default match uses a free chassis, independent torque-limited wheel drives,
-and tire/ground contact. It turns before driving sideways across the court;
-it cannot command lateral sliding. Wheel dimensions follow the CAD assembly,
+and tire/ground contact. It cannot slide sideways, and with 3 N·m wheel motors
+it turns at about 45°/s, so facing the table it could never reach a wide ball
+in time (the far column of the coverage grid scored 0 %). It therefore parks
+side-on between points (`RallySim.rest_heading`, `rest_base`), like a player's
+ready stance, so a lateral move is straight driving. Measured with
+`evaluate_rally --mobile`, 10 feeds per cell, current checkpoint: worst lateral
+column 0 % → 24–30 %, misses 106 → 44 of 250. Wheel dimensions follow the CAD assembly,
 but mass, motors, traction and passive spherical supports are surrogate physics,
 not calibrated real-hardware specifications. Target placement is limited to
 ±0.45 m laterally; unlike the old joint limit this is a controller workspace.

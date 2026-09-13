@@ -59,14 +59,19 @@ def build_xml(lift_enabled=False):
     defaults = ET.SubElement(mj, "default")
     ET.SubElement(defaults, "geom", friction="0.25 0.005 0.0001", solref="0.006 0.3", solimp="0.95 0.99 0.001")
     assets = ET.SubElement(mj, "asset")
+    # Warm paper ground and a flat paper sky (docs/UI_DESIGN.md); the court is white with ink lines.
+    ET.SubElement(assets, "texture", name="sky", type="skybox", builtin="flat", rgb1="0.984 0.973 0.961", width="8", height="8")
+    ET.SubElement(assets, "material", name="floor_paper", rgba="0.89 0.86 0.82 1", specular="0", shininess="0")  # lands near #EFE7DD once lit
+    ET.SubElement(assets, "material", name="rubber_robot", rgba="0.55 0.2 0.14 1", specular="0.1", shininess="0.1")
+    ET.SubElement(assets, "material", name="table_card", rgba="1 1 1 1", specular="0", shininess="0")
     world = ET.SubElement(mj, "worldbody")
-    ET.SubElement(world, "light", pos="0 -2 5", dir="0 0 -1", diffuse="0.8 0.8 0.8")
-    ET.SubElement(world, "geom", name="floor", type="plane", size="5 5 0.1", rgba="0.09 0.12 0.17 1")
-    ET.SubElement(world, "geom", name="table", type="box", pos="0 0 0.735", size="1.37 0.7625 0.025", rgba="0.04 0.3 0.36 1")
-    ET.SubElement(world, "geom", name="net", type="box", pos="0 0 0.83625", size="0.006 0.79 0.07625", rgba="0.8 0.85 0.9 0.7")
+    ET.SubElement(world, "light", pos="0 -2 5", dir="0 0 -1", directional="true", diffuse="0.5 0.5 0.5")
+    ET.SubElement(world, "geom", name="floor", type="plane", size="5 5 0.1", material="floor_paper")
+    ET.SubElement(world, "geom", name="table", type="box", pos="0 0 0.735", size="1.37 0.7625 0.025", material="table_card")
+    ET.SubElement(world, "geom", name="net", type="box", pos="0 0 0.83625", size="0.006 0.79 0.07625", rgba="0.09 0.09 0.09 0.25")
     for x in (-1.05, 1.05):
         for y in (-0.55, 0.55):
-            ET.SubElement(world, "geom", type="box", pos=f"{x} {y} 0.355", size="0.035 0.035 0.355", contype="0", conaffinity="0", rgba="0.2 0.23 0.28 1")
+            ET.SubElement(world, "geom", type="box", pos=f"{x} {y} 0.355", size="0.035 0.035 0.355", contype="0", conaffinity="0", rgba="0.09 0.09 0.09 1")
     wrapper = ET.SubElement(world, "body", name="robot_mount", pos="-1.65 0 0")
     actuator = ET.SubElement(mj, "actuator")
     mesh_names = {}
@@ -96,8 +101,8 @@ def build_xml(lift_enabled=False):
             color = v.find("material/color")
             ET.SubElement(body, "geom", type="mesh", mesh=mesh_names[filename], **pose(v.find("origin")), rgba=color.get("rgba") if color is not None else "0.7 0.7 0.7 1", contype="0", conaffinity="0", group="1", mass="0")
         if name == "right_eef":
-            ET.SubElement(body, "geom", name="paddle", type="cylinder", size="0.09 0.008", pos="0 0 0.10", mass="0.17", rgba="0.9 0.12 0.09 1")
-            ET.SubElement(body, "geom", name="handle", type="capsule", fromto="0 0 0 0 0 0.10", size="0.013", contype="0", conaffinity="0", mass="0.03", rgba="0.65 0.42 0.22 1")
+            ET.SubElement(body, "geom", name="paddle", type="cylinder", size="0.09 0.008", pos="0 0 0.10", mass="0.17", material="rubber_robot")
+            ET.SubElement(body, "geom", name="handle", type="capsule", fromto="0 0 0 0 0 0.10", size="0.013", contype="0", conaffinity="0", mass="0.03", rgba="0.42 0.42 0.42 1")
             ET.SubElement(body, "site", name="paddle_center", pos="0 0 0.10", size="0.008", rgba="1 1 0 1")
         for child in children.get(name, []):
             add_link(child.find("child").get("link"), body, child)
@@ -105,7 +110,7 @@ def build_xml(lift_enabled=False):
     add_link("root", wrapper)
     ball = ET.SubElement(world, "body", name="ball", pos="0.7 0 1.1")
     ET.SubElement(ball, "freejoint", name="ball_free")
-    ET.SubElement(ball, "geom", name="ball_geom", type="sphere", size=str(BALL_RADIUS), mass="0.0027", rgba="1 0.75 0.15 1")
+    ET.SubElement(ball, "geom", name="ball_geom", type="sphere", size=str(BALL_RADIUS), mass="0.0027", rgba="0.09 0.09 0.09 1")
     return ET.tostring(mj, encoding="unicode")
 
 

@@ -90,3 +90,32 @@ def test_default_match_returns_the_opening_serve():
         if game.phase!="play":
             break
     assert game.sim.robot_returns>=1
+
+
+def test_paddle_swings_by_itself_when_the_ball_arrives():
+    from bracket_pong.match import RallyMatch
+    from bracket_pong.rules import MatchScore
+    game=RallyMatch()
+    game.score=MatchScore(first_server="robot")
+    game.human_y,game.human_z=0.0,0.9   # hold the paddle on the serve's path, never click
+    game.serve()
+    for _ in range(200):
+        game.tick()
+        if game.sim.rules.last_hitter=="human":
+            break
+    assert game.sim.rules.last_hitter=="human"
+    assert game.sim.last_swing>0, "the swing should have fired without a click"
+    for _ in range(100):
+        game.tick()
+        if game.sim.ball[0]<0 or game.phase!="play":
+            break
+    assert game.sim.ball[0]<0, game.sim.rules.reason
+
+
+def test_mouse_delta_moves_the_paddle_by_sensitivity_and_stays_on_court():
+    from bracket_pong.match import move_paddle
+    import numpy as np
+    target=move_paddle(np.array([0.0,1.08]),(100,-50),0.001)
+    assert np.allclose(target,[0.1,1.13])            # screen up is court up
+    target=move_paddle(np.array([0.75,1.45]),(400,-400),0.001)
+    assert np.allclose(target,[0.8,1.48])            # clipped to the hitting window

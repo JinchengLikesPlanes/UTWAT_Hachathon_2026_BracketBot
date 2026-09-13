@@ -1,0 +1,46 @@
+{
+  "config": {
+    "spread_y": 0.55,
+    "min_z": 0.9,
+    "max_z": 1.3,
+    "speed_min": 2.6,
+    "speed_max": 4.0,
+    "rallies": false,
+    "randomize": false,
+    "base_enabled": true,
+    "mobile": true,
+    "serve_fraction": 0.5
+  },
+  "seed": 0,
+  "requested_steps": 100000,
+  "kind": "rally_wheels_v2",
+  "status": "complete",
+  "resume": "runs/rally-wheels-sideon-feed0/checkpoints/rl_model_150000_steps.zip",
+  "hashes": {
+    "env.py": "6948eff5e14630db1aa1dea4cf9f1d654282262e11b1072d951e2f9cd9011546",
+    "rally_model.py": "950897ec201880f23afc3f0c9be57be478534d24f52f479e4fd0d8db05d55572",
+    "control.py": "8dc2c74eb18a4fe520174d382961d027b120d124846fbf27ceced09f90352e73",
+    "rally.py": "7b806c418e267a0fb21c3a36adfdb2500d497a315663b9f2f2fed58bccf9750d",
+    "evaluate_match.py": "61dfa07178a8c6321a3a3e28d19715dbda7402413ce4bf473447a97fed6659ea",
+    "__init__.py": "7d5b05ae73db422f8e6b7c7523270b5ae5491266aab6d1b14e0a18e5fb5f6fe1",
+    "rules.py": "e69ecad54f419039bae3e470d749bb0a681a641906b73abd8b7e4e45b64d6315",
+    "rally_env.py": "07074aeff10f702120006d119df09bc8cee72445255d06dc68ccbf45c6f03af6",
+    "play.py": "e9dd2d00a9e5c1cc299e2bdab489e56378f78951dd21d0d96c8506676cdf8d2d",
+    "model.py": "d507fb6209f8514b56514a05b7d77d8309854cd43ecdf011779ed2da8d051d14",
+    "transfer.py": "a92be2737ec08e1283c2d9ecae927090da1cf9d897525e9a937fb0928b9c8f4f",
+    "train.py": "4048c041f1bae4126a720ffc4da5b4478a594208f5d1c88139d4250ec25576a2",
+    "evaluate.py": "e9689b7b463c9d89f130ea5fadd878df8966b94bdbe31178d3f0d75e9e4836be",
+    "evaluate_rally.py": "95610f4cbf5391e49ea57052508adcdf2c311f7a48506cb7caa068b006b98e92",
+    "demo.py": "ccf2d430e5bf3a8f5c2b9283689ef40cc7012d8918ba7748e6bf1114b35a60f1",
+    "train_rally.py": "e3ddf016683cc4300c5cb656116b1304b243993d1957f01dafa9859492fadec7",
+    "challenge.py": "daf4da3d37d208ede80be4516145740f4c8fffe318526f2b68a76ada23f36112",
+    "match.py": "59708d701133901b7a6501cc7b2229ad29b56176ff73855eb7440ae0485dd6b6"
+  },
+  "versions": {
+    "mujoco": "3.13.0",
+    "numpy": "2.5.3",
+    "stable-baselines3": "2.9.0",
+    "torch": "2.14.0"
+  },
+  "actual_steps": 100352
+}

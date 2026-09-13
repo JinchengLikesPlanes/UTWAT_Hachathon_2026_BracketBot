@@ -27,6 +27,12 @@ runs/rally-wheels-match-candidate0/*
 !runs/rally-wheels-match-candidate0/checkpoints/
 runs/rally-wheels-match-candidate0/checkpoints/*
 !runs/rally-wheels-match-candidate0/checkpoints/rl_model_150000_steps.zip
+!runs/rally-wheels-sideon-mix0/
+runs/rally-wheels-sideon-mix0/*
+!runs/rally-wheels-sideon-mix0/run.json
+!runs/rally-wheels-sideon-mix0/checkpoints/
+runs/rally-wheels-sideon-mix0/checkpoints/*
+!runs/rally-wheels-sideon-mix0/checkpoints/rl_model_100000_steps.zip
 
 # Frontend build output
 web/node_modules/

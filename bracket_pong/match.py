@@ -11,8 +11,8 @@ import torch
 from stable_baselines3 import PPO
 
 from bracket_pong.model import ROOT
-from bracket_pong.play import PlayWindow, PANEL, ACCENT
-from bracket_pong.rally import RallySim
+from bracket_pong.play import PlayWindow, PAPER, CARD, INK, INK2, INK3, GOOD, BAD
+from bracket_pong.rally import RallySim, intercept
 from bracket_pong.rules import MatchScore
 
 
@@ -29,6 +29,16 @@ def checkpoints():
              ("Checkpoint 100k",folder/"checkpoints/rl_model_100000_steps.zip"),
              ("Best validated",folder/"best_model.zip")]
     return [(name,path) for name,path in choices if path.exists()]
+
+
+PADDLE_LOW,PADDLE_HIGH=np.array([-.8,.86]),np.array([.8,1.48])
+
+
+def move_paddle(position,delta_px,sensitivity):
+    """Relative mouse control, as in mouse-driven pong games: paddle moves by
+    pixels x metres-per-pixel, clipped to the hitting window. Screen up is +z."""
+    dx,dy=delta_px
+    return np.clip(position+np.array([dx,-dy])*sensitivity,PADDLE_LOW,PADDLE_HIGH)
 
 
 class RallyMatch:
@@ -48,8 +58,12 @@ class RallyMatch:
         self.paused=False
         self.human_y,self.human_z=0,1.08
         self.pitch,self.yaw=0.3,0
+        self.pitch_bias=0.0   # from mouse motion, added to the loft angle
         self.swing=False
         self.power=0.5
+        self.auto_swing=True
+        self.swing_lead=0.14   # seconds before the ball reaches the paddle plane
+        self.swing_reach=0.16  # metres from the paddle centre
         self.replay_frames=[]
         self.replay_index=0
         self.replaying=False
@@ -104,6 +118,7 @@ class RallyMatch:
         if self.bot_mode:
             self.sim.opponent("blocker")
         else:
+            self.aim_paddle()
             self.sim.human_control(self.human_y,self.human_z,self.swing,self.pitch,self.yaw,power=self.power)
         self.swing=False
         self.sim.advance()
@@ -112,6 +127,23 @@ class RallyMatch:
             self.point_history.append({"winner":self.sim.rules.winner,"reason":self.sim.rules.reason,"hits":self.sim.rules.hits})
             self.replay_frames=[p.copy() for p in self.sim.trajectory]
             self.phase="game_over" if self.score.winner else "point"
+
+    def aim_paddle(self):
+        """Face angle and swing timing while a ball is incoming. The face opens
+        enough to lift the ball to mid-court (the formula opponent() uses); the
+        swing fires by itself when the ball is about to reach the paddle."""
+        incoming=self.sim.velocity[0]>0.2 and self.sim.rules.receiver=="human"
+        if not (self.auto_swing and incoming):
+            self.pitch=float(np.clip(0.3+self.pitch_bias,0.1,0.5))
+            return
+        p,t,vin=intercept(self.sim.ball,self.sim.velocity,1.48)
+        outgoing=(np.array([-0.6,0,0.78])-p)/0.55
+        outgoing[2]+=4.905*0.55
+        n=vin-outgoing
+        n/=max(np.linalg.norm(n),1e-6)
+        self.pitch=float(np.clip(-np.arcsin(np.clip(n[2],-0.56,0.56))+self.pitch_bias,0.1,0.6))
+        if not self.swing and t<self.swing_lead and np.linalg.norm(p[1:]-[self.human_y,self.human_z])<self.swing_reach:
+            self.swing=True
 
     def replay(self):
         if self.phase in ("point","game_over") and self.replay_frames:
@@ -143,32 +175,40 @@ class MatchWindow(PlayWindow):
         self.camera.elevation=-19
         self.mouse_time=time.monotonic()
         self.mouse_position=np.array([0.0,1.08])
+        self.sensitivity=0.0009   # metres of paddle travel per pixel of mouse travel
+        self.captured=False
+        self.last_cursor=None
 
     def mouse_move(self,window,x,y):
         game=self.game
         if self.drag=="camera" or game.paused or game.replaying:
-            if self.drag=="camera":
+            if self.drag=="camera" and self.last_cursor is not None:
                 self.camera.azimuth-=(x-self.last_cursor[0])*0.3
                 self.camera.elevation=np.clip(self.camera.elevation-(y-self.last_cursor[1])*0.2,-85,-5)
             self.last_cursor=x,y
             return
-        # Ray through the cursor intersects the human hitting plane. This maps
-        # mouse position to the visible paddle, independent of window aspect.
-        c=self.scene.camera[0]
-        forward=np.array(c.forward);up=np.array(c.up);right=np.cross(forward,up)
-        fov=np.tan(np.deg2rad(self.game.sim.model.vis.global_.fovy)/2)
-        ray=forward+(2*x/self.width-1)*self.width/self.height*fov*right+(1-2*y/self.height)*fov*up
-        if abs(ray[0])<1e-5 or (1.5-c.pos[0])/ray[0]<=0:
+        if self.last_cursor is None:
+            self.last_cursor=x,y
             return
-        p=np.array(c.pos)+ray*((1.5-c.pos[0])/ray[0])
-        target=np.clip(p[1:],[ -.8,.86],[.8,1.48])
+        # Relative motion, as mouse pong games do: the cursor is captured and
+        # each pixel of travel moves the paddle a fixed distance.
+        target=move_paddle(self.mouse_position,(x-self.last_cursor[0],y-self.last_cursor[1]),self.sensitivity)
         now=time.monotonic()
         velocity=np.clip((target-self.mouse_position)/max(now-self.mouse_time,0.01),-3.5,3.5)
         game.human_y,game.human_z=target
-        game.pitch=float(np.clip(0.3+velocity[1]*0.06,0.1,0.5))
+        game.pitch_bias=float(np.clip(velocity[1]*0.06,-0.2,0.2))
         game.yaw=float(np.clip(-velocity[0]*0.08,-0.3,0.3))
         self.mouse_position,self.mouse_time=target,now
         self.last_cursor=x,y
+
+    def capture_cursor(self,captured):
+        if captured==self.captured:
+            return
+        self.captured=captured
+        glfw.set_input_mode(self.window,glfw.CURSOR,glfw.CURSOR_DISABLED if captured else glfw.CURSOR_NORMAL)
+        if captured and glfw.raw_mouse_motion_supported():
+            glfw.set_input_mode(self.window,glfw.RAW_MOUSE_MOTION,glfw.TRUE)
+        self.last_cursor=None
 
     def mouse_button(self,window,button,action,mods):
         if button==glfw.MOUSE_BUTTON_LEFT and action==glfw.PRESS:
@@ -202,6 +242,8 @@ class MatchWindow(PlayWindow):
             self.camera.distance,self.camera.azimuth,self.camera.elevation=4.3,180,-19
         elif key in (glfw.KEY_LEFT_BRACKET,glfw.KEY_RIGHT_BRACKET):
             g.power=float(np.clip(g.power+(.1 if key==glfw.KEY_RIGHT_BRACKET else -.1),0,1))
+        elif key in (glfw.KEY_MINUS,glfw.KEY_EQUAL):
+            self.sensitivity=float(np.clip(self.sensitivity*(1.25 if key==glfw.KEY_EQUAL else 0.8),0.0003,0.003))
         elif key in (glfw.KEY_1,glfw.KEY_2,glfw.KEY_3) and g.phase!="play":
             choices=checkpoints()
             index=key-glfw.KEY_1
@@ -214,33 +256,37 @@ class MatchWindow(PlayWindow):
         if min(glfw.get_framebuffer_size(self.window))==0:
             return
         g=self.game
+        self.capture_cursor(not g.paused and not g.replaying and g.phase!="game_over")
         mujoco.mjv_updateScene(g.sim.model,g.sim.data,self.options,None,self.camera,mujoco.mjtCatBit.mjCAT_ALL,self.scene)
         mujoco.mjr_render(self.rect((0,0,self.width,self.height)),self.scene,self.context)
-        self.fill((0,0,self.width,84),PANEL)
+        self.panel((0,0,self.width,84),PAPER,edges="b")
         self.text(24,18,"Bracket Pong",large=True)
         self.text(self.width/2-145,20,f"You  {g.score.human:02d}       Robot  {g.score.robot:02d}",large=True)
-        self.text(self.width-230,20,g.difficulty)
-        self.text(self.width-230,49,f"Rally: {g.sim.rules.hits} hits")
-        self.text(24,53,"First to 11, win by two")
+        self.text(self.width-230,20,g.difficulty,color=INK3)
+        self.text(self.width-230,49,f"Rally: {g.sim.rules.hits} hits",color=INK3)
+        self.text(24,53,"First to 11, win by two",color=INK3)
+        tone=INK
         if g.phase=="pre_serve":
-            status="Your serve - press Space" if g.score.server=="human" else "Robot preparing to serve"
+            status="Your serve. Press Space" if g.score.server=="human" else "Robot preparing to serve"
         elif g.phase=="play":
-            status=f"Move the blue paddle. Click to swing. Power: {g.power:.0%}   [ / ]: adjust"
+            status=f"Move to the ball; the paddle swings by itself. Power {g.power:.0%} ([ / ]), mouse {self.sensitivity*1000:.1f} mm/px (- / =)"
         elif g.phase=="game_over":
-            status=("You win!" if g.score.winner=="human" else "Robot wins!")+"   N: new match   R: replay"
+            tone=GOOD if g.score.winner=="human" else BAD
+            status=("You win." if g.score.winner=="human" else "Robot wins.")+"   N: new match   R: replay"
         else:
-            status=("Your point" if g.sim.rules.winner=="human" else "Robot point")+f" - {g.sim.rules.reason}.  Space: next point"
+            tone=GOOD if g.sim.rules.winner=="human" else BAD
+            status=("Your point." if g.sim.rules.winner=="human" else "Robot point.")+f" {g.sim.rules.reason}.  Space: next point"
         if g.replaying:
-            status="Point replay - R to stop, Space for next point"
-        self.fill((0,self.height-85,self.width,85),PANEL)
-        self.text(24,self.height-72,status)
-        self.text(24,self.height-37,"Right-drag: view   Scroll: zoom   C: reset view   Esc: pause   R: replay   N: new   Q: quit")
+            status,tone="Point replay. R to stop, Space for next point",INK
+        self.panel((0,self.height-85,self.width,85),PAPER,edges="t")
+        self.text(24,self.height-72,status,color=tone)
+        self.text(24,self.height-37,"Right-drag: view   Scroll: zoom   C: reset view   Esc: pause   R: replay   N: new   Q: quit",color=INK3)
         if g.paused:
-            self.fill((self.width/2-220,self.height/2-100,440,200),PANEL)
-            self.text(self.width/2-190,self.height/2-75,"Paused",large=True)
-            self.text(self.width/2-190,self.height/2-25,"Esc: resume     N: new match")
-            self.text(self.width/2-190,self.height/2+10,"1 / 2 / 3: difficulty between points")
-            self.text(self.width/2-190,self.height/2+45,"Q: quit     Right-drag: inspect court")
+            self.panel((self.width/2-220,self.height/2-100,440,200),CARD)
+            self.text(self.width/2-190,self.height/2-75,"Paused.",large=True)
+            self.text(self.width/2-190,self.height/2-25,"Esc: resume     N: new match",color=INK2)
+            self.text(self.width/2-190,self.height/2+10,"1 / 2 / 3: difficulty between points",color=INK2)
+            self.text(self.width/2-190,self.height/2+45,"Q: quit     Right-drag: inspect court",color=INK2)
 
     def run(self):
         previous=time.monotonic();accumulator=0
@@ -253,7 +299,12 @@ class MatchWindow(PlayWindow):
 
     def self_test(self,output):
         self.draw()
-        self.mouse_move(self.window,self.width*.4,self.height*.6)
+        assert self.captured
+        self.mouse_move(self.window,400,300)
+        self.mouse_move(self.window,500,250)
+        assert abs(self.game.human_y-100*self.sensitivity)<1e-9 and abs(self.game.human_z-1.08-50*self.sensitivity)<1e-9
+        self.key(self.window,glfw.KEY_EQUAL,0,glfw.PRESS,0)
+        assert self.sensitivity>0.0009
         self.key(self.window,glfw.KEY_SPACE,0,glfw.PRESS,0)
         assert self.game.phase=="play"
         paddle_before=(self.game.human_y,self.game.human_z)

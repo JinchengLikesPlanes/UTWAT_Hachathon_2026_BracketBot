@@ -2,7 +2,7 @@
 
 The reference implementation is `DuoBotics Landing v3.dc.html`. This document records the rules that produced it, so an older or inconsistent UI can be brought in line without guessing.
 
-Both UIs in this repo follow it: the teaching game (`game/style.css`) and the Learning Lab (`web/src/styles.css`). One deliberate exception: the grain layers (§3) were tried on both and removed, so the ground is flat warm paper.
+All three UIs in this repo follow it: the teaching game (`game/style.css`), the Learning Lab (`web/src/styles.css`) and the native pong window (`bracket_pong/play.py`, `bracket_pong/match.py`). One deliberate exception: the grain layers (§3) were tried on both and removed, so the ground is flat warm paper.
 
 DuoBotics teaches robotics fundamentals in short lessons that end with a real self-balancing robot. The product is built on Bracket Bot. The interface has one job: make the hardware the most interesting thing on the screen.
 
@@ -144,3 +144,13 @@ In order:
 7. **Make the hero exactly one viewport** with its primary visual pinned to the bottom edge.
 8. **Replace all reveal JavaScript** with CSS `animation … both` on the single easing curve.
 9. **Check contrast last:** no text lighter than `#6B6B6B`, nothing below 13.5px.
+
+---
+
+## 10. The native pong window
+
+`python -m bracket_pong.play` draws its HUD with MuJoCo's overlay, which has two bitmap fonts and flat rectangles only. So §4 (Inter) and the radii in §5 do not apply there; everything else does.
+
+- Palette constants live at the top of `bracket_pong/play.py` (`PAPER`, `CARD`, `HAIRLINE`, `INK`, `INK2`, `INK3`, `GOOD`, `BAD`). Bands are paper with a 1px hairline on the edge that meets the scene; the pause card and the aim pad are white with a hairline all round.
+- The court itself follows §2: paper sky, `#EFE7DD` floor, white table with ink lines, ink legs and ball, robot rubber `#A0402F`, human rubber a translucent mid grey so the ink ball stays visible through it. Materials are matte and the light is directional so no surface blows out to white.
+- Status text uses the pass/fail pair: your point green, robot point red, everything else ink.
