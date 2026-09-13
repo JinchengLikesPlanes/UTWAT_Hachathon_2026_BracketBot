@@ -169,9 +169,9 @@ export function graph(canvasEl, { yRange = [-0.2, 0.2], tRange = [0, 8], yLines 
     const X = t => (t - tRange[0]) / (tRange[1] - tRange[0]) * w
     const Y = y => h - (y - yRange[0]) / (yRange[1] - yRange[0]) * h
     for (const b of bands) { ctx.fillStyle = b.color; ctx.fillRect(X(b.t0), 0, X(b.t1) - X(b.t0), h) }
-    ctx.strokeStyle = '#2c3446'; ctx.lineWidth = 1
+    ctx.strokeStyle = 'rgba(23,23,23,.12)'; ctx.lineWidth = 1
     for (const y of yLines) { ctx.beginPath(); ctx.moveTo(0, Y(y)); ctx.lineTo(w, Y(y)); ctx.stroke() }
-    ctx.strokeStyle = '#4a5670'; ctx.beginPath(); ctx.moveTo(0, Y(0)); ctx.lineTo(w, Y(0)); ctx.stroke()
+    ctx.strokeStyle = 'rgba(23,23,23,.24)'; ctx.beginPath(); ctx.moveTo(0, Y(0)); ctx.lineTo(w, Y(0)); ctx.stroke()
     for (const s of series) {
       if (!s.points.length) continue
       ctx.strokeStyle = s.color; ctx.lineWidth = s.width ?? 2; ctx.beginPath()

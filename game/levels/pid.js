@@ -23,9 +23,9 @@ export async function showLevel(app) {
   robot.group.position.set(-AXLE.x, 0, -AXLE.z)   // URDF frame: put the axle at the pivot
   inner.add(robot.group); pivot.add(inner); view.scene.add(pivot)
   const dressing = new THREE.Group()
-  const line = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.004, 1.4), new THREE.MeshStandardMaterial({ color: 0xffb547, emissive: 0x553300 }))
+  const line = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.004, 1.4), new THREE.MeshStandardMaterial({ color: 0x171717 }))
   line.position.y = 0.003
-  const arrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(-0.7, 1.0, 0), 0.45, 0xf87171, 0.15, 0.1)
+  const arrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(-0.7, 1.0, 0), 0.45, 0xa0402f, 0.15, 0.1)
   arrow.visible = false
   dressing.add(line, arrow)
   view.scene.add(dressing)
@@ -98,12 +98,12 @@ export async function showLevel(app) {
     const skipBtn = button(S().skip, () => { if (play) play.speed = 40 }, { cls: 'small', id: 'skip' }); skipBtn.disabled = true
     const next = button(STR.common.next, () => opts.onNext(), { primary: true, id: 'next' }); next.hidden = true
     const spec = () => DISTURBANCES[disturbance]
-    const bands = () => spec().force ? [{ t0: spec().start, t1: spec().end, color: 'rgba(248,113,113,.18)' }] : []
+    const bands = () => spec().force ? [{ t0: spec().start, t1: spec().end, color: 'rgba(160,64,47,.10)' }] : []
     const drawBands = () => { gTilt.draw([], bands()); gPos.draw([], bands()) }
     const drawUpTo = (traj, idx) => {
       const pts = traj.slice(0, idx + 1)
-      gTilt.draw([{ points: pts.map(p => ({ t: p.t, y: deg(p.th) })), color: '#ffb547' }], bands())
-      gPos.draw([{ points: pts.map(p => ({ t: p.t, y: p.x * 100 })), color: '#60a5fa' }], bands())
+      gTilt.draw([{ points: pts.map(p => ({ t: p.t, y: deg(p.th) })), color: '#171717' }], bands())
+      gPos.draw([{ points: pts.map(p => ({ t: p.t, y: p.x * 100 })), color: '#171717' }], bands())
       const p = traj[idx]
       for (const k of ['p', 'd', 'hold', 'i']) bars.querySelector(`[data-id=${k}] .v`).textContent = (k === 'hold' || k === 'i' ? deg(p[k]) : p[k]).toFixed(1)
     }

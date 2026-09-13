@@ -23,7 +23,7 @@ export async function showLevel(app) {
   ball.castShadow = true; ball.visible = false
   dressing.add(ball)
   const trailGeo = new THREE.BufferGeometry().setFromPoints(Array.from({ length: 600 }, () => new THREE.Vector3()))
-  const trail = new THREE.Line(trailGeo, new THREE.LineBasicMaterial({ color: 0xffb547, transparent: true, opacity: 0.7 }))
+  const trail = new THREE.Line(trailGeo, new THREE.LineBasicMaterial({ color: 0x171717, transparent: true, opacity: 0.6 }))
   trail.visible = false
   dressing.add(trail)
   view.scene.add(dressing)
@@ -116,8 +116,8 @@ export async function showLevel(app) {
       if (c.width !== w * dpr) { c.width = w * dpr; c.height = h * dpr }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h)
       const p = policy.probs(sampleServe), n = p.length, bw = w / n
-      p.forEach((v, i) => { ctx.fillStyle = i === policy.greedy(sampleServe) ? '#ffb547' : '#3b4a6b'; ctx.fillRect(i * bw + 2, h - v * (h - 4), bw - 4, v * (h - 4)) })
-      ctx.strokeStyle = '#4a5670'; ctx.beginPath(); ctx.moveTo(0, h - (1 / n) * (h - 4)); ctx.lineTo(w, h - (1 / n) * (h - 4)); ctx.stroke()
+      p.forEach((v, i) => { ctx.fillStyle = i === policy.greedy(sampleServe) ? '#171717' : 'rgba(23,23,23,.22)'; ctx.fillRect(i * bw + 2, h - v * (h - 4), bw - 4, v * (h - 4)) })
+      ctx.strokeStyle = 'rgba(23,23,23,.24)'; ctx.beginPath(); ctx.moveTo(0, h - (1 / n) * (h - 4)); ctx.lineTo(w, h - (1 / n) * (h - 4)); ctx.stroke()
       wrap.maxP = Math.max(...p)
     }
     requestAnimationFrame(wrap.draw)
@@ -297,7 +297,7 @@ export async function showLevel(app) {
     const canvas = el('canvas', 'graph')
     const wrap = el('div', 'graphwrap'); wrap.append(el('div', 'graphlabel', S().enough.curveLabel), canvas)
     const g = graph(canvas, { yRange: [0, 20], tRange: [0, Math.max(600, ...lv.curve.map(c => c.episodes)) + 50], yLines: [5, 10, 15] })
-    const draw = () => g.draw([{ points: lv.curve.map(c => ({ t: c.episodes, y: c.legal })), color: '#4ade80', width: 3 }], [{ t0: 300, t1: 301, color: '#ffb547' }])
+    const draw = () => g.draw([{ points: lv.curve.map(c => ({ t: c.episodes, y: c.legal })), color: '#2e6b45', width: 3 }], [{ t0: 300, t1: 301, color: '#171717' }])
     requestAnimationFrame(draw)
     const counters = counterBox()
     counters.onEpisode = draw

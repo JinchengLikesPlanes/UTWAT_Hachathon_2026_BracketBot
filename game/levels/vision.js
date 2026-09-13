@@ -26,9 +26,9 @@ export async function showLevel(app) {
   dressing.add(buildTable(THREE, view))
   const ball = new THREE.Mesh(new THREE.SphereGeometry(V.BALL_R, 16, 12), new THREE.MeshStandardMaterial({ color: 0xff8c1a, emissive: 0x552200 }))
   ball.castShadow = true; ball.visible = false
-  const marker = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.012, 0.3), new THREE.MeshBasicMaterial({ color: 0xffb547 }))
+  const marker = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.012, 0.3), new THREE.MeshBasicMaterial({ color: 0x171717 }))
   marker.visible = false
-  const truthRing = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.006, 8, 24), new THREE.MeshBasicMaterial({ color: 0x4ade80 }))
+  const truthRing = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.006, 8, 24), new THREE.MeshBasicMaterial({ color: 0x2e6b45 }))
   truthRing.rotation.y = Math.PI / 2; truthRing.visible = false
   // frustum: camera eye to the four image corners at 1 m, built looking straight ahead and turned
   // with the head (nod = rotation about z, turn = rotation about y)
@@ -37,7 +37,7 @@ export async function showLevel(app) {
   const cs = [[-ha, hb], [ha, hb], [ha, -hb], [-ha, -hb]].map(([a, b]) => new THREE.Vector3(1, b, a))
   const pts = []
   for (let i = 0; i < 4; i++) pts.push(new THREE.Vector3(), cs[i], cs[i], cs[(i + 1) % 4])
-  const frustum = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.5 }))
+  const frustum = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x171717, transparent: true, opacity: 0.35 }))
   frustum.position.set(V.CAM.x, cy, 0)
   const look = (nod, turn) => { frustum.rotation.set(0, -turn, -nod, 'YZX'); head.setAngles(nod, -turn) }
   dressing.add(ball, marker, truthRing, frustum)
@@ -60,7 +60,7 @@ export async function showLevel(app) {
       img.data.set(fr.rgb)
       if (mask && fr.mask) for (let i = 0; i < W * H; i++) if (fr.mask[i]) { img.data[i * 4] = 60; img.data[i * 4 + 1] = 240; img.data[i * 4 + 2] = 120 }
       const ctx = cc.getContext('2d'); ctx.putImageData(img, 0, 0)
-      if (mask && fr.found) { ctx.strokeStyle = '#ffb547'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(fr.u - 4, fr.v + 0.5); ctx.lineTo(fr.u + 5, fr.v + 0.5); ctx.moveTo(fr.u + 0.5, fr.v - 4); ctx.lineTo(fr.u + 0.5, fr.v + 5); ctx.stroke() }
+      if (mask && fr.found) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(fr.u - 4, fr.v + 0.5); ctx.lineTo(fr.u + 5, fr.v + 0.5); ctx.moveTo(fr.u + 0.5, fr.v - 4); ctx.lineTo(fr.u + 0.5, fr.v + 5); ctx.stroke() }
       for (let i = 0; i < W * H; i++) { const g = Math.max(0, Math.min(255, 255 * (1 - (fr.depth[i] - 0.3) / 3.7))); dimg.data[i * 4] = dimg.data[i * 4 + 1] = dimg.data[i * 4 + 2] = g; dimg.data[i * 4 + 3] = 255 }
       dc.getContext('2d').putImageData(dimg, 0, 0)
     }
@@ -226,7 +226,7 @@ export async function showLevel(app) {
         title: S().steps[4].title, lead: S().steps[4].lead, note: S().steps[4].note,
         controls: [gapRow, gw],
         opts: () => { pts = []; g.draw([]); return { width: lv.width, mode: 'depth', gap: lv.gap, bounceRule: lv.bounceRule } },
-        onFrame: fr => { if (fr.pred !== undefined) pts.push({ t: fr.t, y: fr.pred * 100 }); g.draw([{ points: [{ t: 0, y: crossY }, { t: 1, y: crossY }], color: '#4ade80', width: 1 }, { points: pts, color: '#ffb547' }]) },
+        onFrame: fr => { if (fr.pred !== undefined) pts.push({ t: fr.t, y: fr.pred * 100 }); g.draw([{ points: [{ t: 0, y: crossY }, { t: 1, y: crossY }], color: '#2e6b45', width: 1 }, { points: pts, color: '#171717' }]) },
         stats: r => metrics([
           { id: 'pred', label: S().metrics.pred, value: r.decision ? `${cm(r.decision.err)} cm` : '—', kind: r.hit ? 'good' : 'bad' },
           { id: 'when', label: S().metrics.when, value: r.decision ? S().metrics.early.replace('{t}', (r.crossT - r.decision.t).toFixed(2)) : S().metrics.late, kind: r.decision ? 'good' : 'bad' },

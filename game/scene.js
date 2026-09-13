@@ -5,7 +5,7 @@ export const PHONE_WIDTH = 700
 
 export function createScene(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' })
-  renderer.setClearColor(0x10141c)
+  renderer.setClearColor(0xfbf8f5)
   // Phones: no shadows, DPR 1. Decided once at start-up (toggling shadows at runtime re-compiles materials).
   const phoneAtStart = innerWidth < PHONE_WIDTH
   renderer.shadowMap.enabled = !phoneAtStart
@@ -13,17 +13,17 @@ export function createScene(canvas) {
   renderer.toneMapping = THREE.ACESFilmicToneMapping
 
   const scene = new THREE.Scene()
-  scene.background = new THREE.Color(0x10141c)
-  scene.fog = new THREE.Fog(0x10141c, 8, 22)
+  scene.background = new THREE.Color(0xfbf8f5)
+  scene.fog = new THREE.Fog(0xfbf8f5, 8, 22)
 
   const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 60)
   camera.position.set(2.6, 1.5, 3.2)
   camera.lookAt(0, 0.7, 0)
 
-  const hemi = new THREE.HemisphereLight(0xdfe8ff, 0x3a3226, 0.9)
+  const hemi = new THREE.HemisphereLight(0xfff8f0, 0x8a7a68, 0.75)
   scene.add(hemi)
-  const sun = new THREE.DirectionalLight(0xffffff, 2.2)
-  sun.position.set(3, 6, 2)
+  const sun = new THREE.DirectionalLight(0xfff6ec, 2.6)
+  sun.position.set(4, 5, 3)
   sun.castShadow = true
   sun.shadow.mapSize.set(1024, 1024)
   sun.shadow.camera.left = sun.shadow.camera.bottom = -4
@@ -40,7 +40,7 @@ export function createScene(canvas) {
     t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy())
     return t
   }
-  const floorMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: texture('tex_floor.png', 20), roughness: 0.95 })
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: texture('tex_floor.png', 20), roughness: 1.0 })
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), floorMat)
   floor.rotation.x = -Math.PI / 2
   floor.receiveShadow = true

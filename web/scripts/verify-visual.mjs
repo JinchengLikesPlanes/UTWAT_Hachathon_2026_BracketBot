@@ -66,7 +66,7 @@ const truth = [...Array(6).fill('red'), ...Array(6).fill('blue'), ...Array(6).fi
 await step('vision: label 18, train, test, improve, own color', async () => {
   await openLesson(/teach it colors/i)
   for (let i = 0; i < 18; i++) await page.getByLabel(`Label sample ${i + 1}`, { exact: true }).selectOption(truth[i])
-  await page.getByText('18 LABELED').waitFor()
+  await page.getByText('18 labeled').waitFor()
   await page.getByRole('button', { name: /train classifier/i }).click()
   await page.getByText(/training fit/i).waitFor({ timeout: 20000 })
   await page.getByRole('button', { name: /reveal 12 tests/i }).click()
@@ -89,9 +89,9 @@ await step('vision: label 18, train, test, improve, own color', async () => {
 await step('vision: reload keeps labels, model and completion', async () => {
   await page.reload({ waitUntil: 'networkidle' })
   const card = await page.getByRole('button', { name: /teach it colors/i }).innerText()
-  if (!/COMPLETE/.test(card)) throw new Error(`vision card after reload: ${card.replace(/\n/g, ' ')}`)
+  if (!/complete/i.test(card)) throw new Error(`vision card after reload: ${card.replace(/\n/g, ' ')}`)
   await page.getByRole('button', { name: /teach it colors/i }).click()
-  await page.getByText('18 LABELED').waitFor()
+  await page.getByText('18 labeled').waitFor()
   if (await page.getByRole('button', { name: /^ask the model$/i }).isDisabled()) throw new Error('model was not restored after reload')
 })
 
@@ -133,7 +133,7 @@ await step('rl: reference evaluation and concept check', async () => {
   await shot('rl-complete-desktop')
   await page.getByRole('button', { name: /lab map/i }).click()
   const cards = await page.locator('.lesson-card').allInnerTexts()
-  if (cards.filter(c => /COMPLETE/.test(c)).length !== 3) throw new Error(`expected 3 complete cards: ${cards.map(c => c.replace(/\n/g, ' ')).join(' | ')}`)
+  if (cards.filter(c => /complete/i.test(c)).length !== 3) throw new Error(`expected 3 complete cards: ${cards.map(c => c.replace(/\n/g, ' ')).join(' | ')}`)
   await shot('home-complete-desktop')
 })
 

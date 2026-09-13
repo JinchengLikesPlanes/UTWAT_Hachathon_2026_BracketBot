@@ -1,4 +1,4 @@
-// Hub: a winding "learning path" — one big node per level with its step dots, like a language-app map.
+// Hub: a winding "learning path": one big node per level with its step dots, like a language-app map.
 import { STR } from './strings.js'
 import { el, button, modal } from './ui.js'
 import { resetState, defaultState, saveState } from './state.js'
@@ -12,9 +12,6 @@ export function showHub(app) {
   ui.replaceChildren()
   const root = el('div', 'hub map')
   root.append(el('h1', '', STR.hub.title), el('p', 'sub', STR.hub.subtitle))
-  const mission = el('div', 'mission')
-  STR.hub.mission.forEach(t => mission.append(el('span', 'chip', t)))
-  root.append(mission)
   const path = el('div', 'path')
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
   svg.setAttribute('class', 'trail')
@@ -35,7 +32,7 @@ export function showHub(app) {
     const circle = button('', () => app.go(id), { cls: 'circle', id: `play-${id}` })
     circle.setAttribute('aria-label', `${STR.hub.play}: ${s.name}`)
     if (lv.done) { const img = el('img'); img.src = `./assets/spr_badge_${id}.png`; img.alt = STR.hub.badge; circle.append(img) }
-    else circle.append(el('span', 'icon', s.icon))
+    else circle.append(el('span', 'icon', String(i + 1)))   // the levels are a sequence: number them
     const info = el('div', 'info')
     info.append(el('h2', '', s.name), el('p', '', s.blurb))
     const dots = el('div', 'dots')
@@ -67,7 +64,7 @@ export function showHub(app) {
   root.append(foot)
   ui.append(root)
 
-  // Draw the winding trail through the circle centres (and the finished part of it in gold).
+  // Draw the winding trail through the circle centres (and the finished part of it in ink).
   const drawTrail = () => {
     const pr = path.getBoundingClientRect()
     const pts = nodes.map(n => { const r = n.circle.getBoundingClientRect(); return { x: r.left + r.width / 2 - pr.left, y: r.top + r.height / 2 - pr.top + path.scrollTop } })
@@ -81,7 +78,7 @@ export function showHub(app) {
   addEventListener('resize', drawTrail)
   app.onLeave = () => removeEventListener('resize', drawTrail)
 
-  app.view.lookAt([1.6, 1.9, 4.6], [-1.7, 1.5, 0], { width: 2.0, height: 1.8 })
+  app.view.lookAt([1.2, 1.5, 3.4], [-1.55, 1.05, 0], { width: 2.0, height: 1.8 })
   app.robot.group.position.set(0, 0, 0)
   // idle: a friendly wave with the right arm
   let t = 0
