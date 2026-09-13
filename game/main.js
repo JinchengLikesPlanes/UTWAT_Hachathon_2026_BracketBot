@@ -33,6 +33,7 @@ const app = {
   tick: null,                       // per-screen update(dtSeconds) hook
   save() { saveState(app.state) },
   async go(name) {
+    app.onLeave?.(); app.onLeave = null
     app.tick = null
     app.screen = name
     for (const j of robot.joints.keys()) robot.setJoint(j, 0)

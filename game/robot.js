@@ -80,3 +80,23 @@ export async function buildRobot(json, { loadMesh } = {}) {
   group.add(root)
   return { group, links, joints, setJoint }
 }
+
+// Spin a link's visual about an axis given in the robot's root frame, pivoting on the mesh's own centre.
+// Used for the wheels: the URDF fixes them (they are not joints), so the game rotates the tyre mesh.
+export function makeSpinner(robot, linkName, axisRoot = new THREE.Vector3(0, 1, 0)) {
+  const link = robot.links.get(linkName)
+  const holder = link.children.find(c => c.name.endsWith(':visual'))
+  if (!holder) return { setAngle() {} }
+  robot.group.updateMatrixWorld(true)
+  const box = new THREE.Box3().setFromObject(holder, true)
+  const centreWorld = box.getCenter(new THREE.Vector3())
+  const centreLocal = link.worldToLocal(centreWorld.clone())
+  const rootQuat = robot.group.getWorldQuaternion(new THREE.Quaternion())
+  const linkQuat = link.getWorldQuaternion(new THREE.Quaternion())
+  const axisLocal = axisRoot.clone().applyQuaternion(rootQuat).applyQuaternion(linkQuat.invert()).normalize()
+  const pivot = new THREE.Group()
+  pivot.position.copy(centreLocal)
+  link.add(pivot)
+  pivot.attach(holder)
+  return { setAngle: a => pivot.setRotationFromAxisAngle(axisLocal, a) }
+}
