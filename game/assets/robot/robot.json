@@ -1,0 +1,1738 @@
+{
+ "links": [
+  {
+   "name": "root",
+   "parent": null,
+   "joint": null,
+   "xyz": [
+    0,
+    0,
+    0
+   ],
+   "rpy": [
+    0,
+    0,
+    0
+   ],
+   "visual": null,
+   "mesh": null,
+   "color": [
+    0.8,
+    0.8,
+    0.8
+   ]
+  },
+  {
+   "name": "base_plate__base_plate",
+   "parent": "root",
+   "joint": {
+    "name": "fixed_node_to_root_joint",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    0.011339824976477019,
+    6.451603370418932e-07,
+    0.07762935366097448
+   ],
+   "rpy": [
+    -1.570798682849108,
+    -5.0519484021009344e-05,
+    1.7894013210692803e-07
+   ],
+   "visual": null,
+   "mesh": "Base_Plate__Base_Plate.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "main_extrusion__main_extrusion__main_extrusion__main_extrusion",
+   "parent": "base_plate__base_plate",
+   "joint": {
+    "name": "base_extrusion_fastened_joint_8",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    1.73472e-18,
+    -6.93889e-18,
+    0.0
+   ],
+   "rpy": [
+    -4.51029e-51,
+    -1.17094e-17,
+    7.70372e-34
+   ],
+   "visual": null,
+   "mesh": "Main_Extrusion__Main_Extrusion__Main_Extrusion__Main_Extrusion.glb",
+   "color": [
+    0.301961,
+    0.301961,
+    0.301961
+   ]
+  },
+  {
+   "name": "base_extrusion__base_extrusion__base_extrusion__base_extrusion",
+   "parent": "main_extrusion__main_extrusion__main_extrusion__main_extrusion",
+   "joint": {
+    "name": "base_extrusion_fastened_joint_19",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    1.73472e-18,
+    -6.93889e-18,
+    0.0
+   ],
+   "rpy": [
+    -4.51029e-51,
+    -1.17094e-17,
+    7.70372e-34
+   ],
+   "visual": null,
+   "mesh": "Base_Extrusion__Base_Extrusion__Base_Extrusion__Base_Extrusion.glb",
+   "color": [
+    0.8,
+    0.8,
+    0.8
+   ]
+  },
+  {
+   "name": "base_extrusion__base_extrusion",
+   "parent": "base_extrusion__base_extrusion__base_extrusion__base_extrusion",
+   "joint": {
+    "name": "base_extrusion_fastened_joint_1",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    1.73472e-18,
+    -6.93889e-18,
+    0.0
+   ],
+   "rpy": [
+    -4.51029e-51,
+    -1.17094e-17,
+    7.70372e-34
+   ],
+   "visual": null,
+   "mesh": "Base_Extrusion__Base_Extrusion.glb",
+   "color": [
+    0.792157,
+    0.819608,
+    0.933333
+   ]
+  },
+  {
+   "name": "base_print__base_print",
+   "parent": "base_extrusion__base_extrusion",
+   "joint": {
+    "name": "base_extrusion_fastened_joint_3",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    1.73472e-18,
+    -6.93889e-18,
+    0.0
+   ],
+   "rpy": [
+    -4.51029e-51,
+    -1.17094e-17,
+    7.70372e-34
+   ],
+   "visual": null,
+   "mesh": "Base_Print__Base_Print.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "battery_terminal__battery_terminal",
+   "parent": "base_print__base_print",
+   "joint": {
+    "name": "base_extrusion_fastened_joint_9",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    1.73472e-18,
+    -6.93889e-18,
+    0.0
+   ],
+   "rpy": [
+    -4.51029e-51,
+    -1.17094e-17,
+    7.70372e-34
+   ],
+   "visual": null,
+   "mesh": "Battery_Terminal__Battery_Terminal.glb",
+   "color": [
+    1.0,
+    0.756863,
+    0.054902
+   ]
+  },
+  {
+   "name": "bottom_cover_front__bottom_cover_front__bottom_cover_front__bottom_cover_front",
+   "parent": "base_plate__base_plate",
+   "joint": {
+    "name": "base_extrusion_fastened_joint_4",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    0.004,
+    0.0272667,
+    0.000135341
+   ],
+   "rpy": [
+    -7.63278e-16,
+    -2.47372e-15,
+    -2.41652e-13
+   ],
+   "visual": null,
+   "mesh": "Bottom_Cover_Front__Bottom_Cover_Front__Bottom_Cover_Front__Bottom_Cover_Front.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "cover_middlebot_front__cover_middlebot_front__cover_middlebot_front__cover_middlebot_front",
+   "parent": "bottom_cover_front__bottom_cover_front__bottom_cover_front__bottom_cover_front",
+   "joint": {
+    "name": "base_extrusion_fastened_joint_12",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    1.73472e-18,
+    -6.93889e-18,
+    1.73472e-18
+   ],
+   "rpy": [
+    6.93889e-18,
+    5.42101e-18,
+    1.88079e-35
+   ],
+   "visual": null,
+   "mesh": "Cover_MiddleBot_Front__Cover_MiddleBot_Front__Cover_MiddleBot_Front__Cover_MiddleBot_Front.glb",
+   "color": [
+    0.894118,
+    0.894118,
+    0.894118
+   ]
+  },
+  {
+   "name": "cover_middletop_front__cover_middletop_front__cover_middletop_front__cover_middletop_front",
+   "parent": "cover_middlebot_front__cover_middlebot_front__cover_middlebot_front__cover_middlebot_front",
+   "joint": {
+    "name": "base_extrusion_fastened_joint_17",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    1.73472e-18,
+    -6.93889e-18,
+    1.73472e-18
+   ],
+   "rpy": [
+    6.93889e-18,
+    5.42101e-18,
+    1.88079e-35
+   ],
+   "visual": null,
+   "mesh": "Cover_MiddleTop_Front__Cover_MiddleTop_Front__Cover_MiddleTop_Front__Cover_MiddleTop_Front.glb",
+   "color": [
+    0.894118,
+    0.894118,
+    0.894118
+   ]
+  },
+  {
+   "name": "cover_top_front__cover_top_front__cover_top_front__cover_top_front",
+   "parent": "cover_middletop_front__cover_middletop_front__cover_middletop_front__cover_middletop_front",
+   "joint": {
+    "name": "base_extrusion_fastened_joint_2",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    1.73472e-18,
+    -6.93889e-18,
+    1.73472e-18
+   ],
+   "rpy": [
+    6.93889e-18,
+    5.42101e-18,
+    1.88079e-35
+   ],
+   "visual": null,
+   "mesh": "Cover_Top_Front__Cover_Top_Front__Cover_Top_Front__Cover_Top_Front.glb",
+   "color": [
+    0.894118,
+    0.894118,
+    0.894118
+   ]
+  },
+  {
+   "name": "top_cover_back__top_cover_back__top_cover_back__top_cover_back",
+   "parent": "cover_top_front__cover_top_front__cover_top_front__cover_top_front",
+   "joint": {
+    "name": "base_extrusion_fastened_joint",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    1.73472e-18,
+    -6.93889e-18,
+    1.73472e-18
+   ],
+   "rpy": [
+    6.93889e-18,
+    5.42101e-18,
+    1.88079e-35
+   ],
+   "visual": null,
+   "mesh": "Top_Cover_back__Top_Cover_back__Top_Cover_back__Top_Cover_back.glb",
+   "color": [
+    0.894118,
+    0.894118,
+    0.894118
+   ]
+  },
+  {
+   "name": "cover_middletop_back__cover_middletop_back__cover_middletop_back__cover_middletop_back",
+   "parent": "top_cover_back__top_cover_back__top_cover_back__top_cover_back",
+   "joint": {
+    "name": "base_extrusion_fastened_joint_5",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    1.73472e-18,
+    -6.93889e-18,
+    1.73472e-18
+   ],
+   "rpy": [
+    6.93889e-18,
+    5.42101e-18,
+    1.88079e-35
+   ],
+   "visual": null,
+   "mesh": "Cover_MiddleTop_Back__Cover_MiddleTop_Back__Cover_MiddleTop_Back__Cover_MiddleTop_Back.glb",
+   "color": [
+    0.894118,
+    0.894118,
+    0.894118
+   ]
+  },
+  {
+   "name": "cover_middlebot_back__cover_middlebot_back__cover_middlebot_back__cover_middlebot_back",
+   "parent": "cover_middletop_back__cover_middletop_back__cover_middletop_back__cover_middletop_back",
+   "joint": {
+    "name": "base_extrusion_fastened_joint_20",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    1.73472e-18,
+    -6.93889e-18,
+    1.73472e-18
+   ],
+   "rpy": [
+    6.93889e-18,
+    5.42101e-18,
+    1.88079e-35
+   ],
+   "visual": null,
+   "mesh": "Cover_MiddleBot_Back__Cover_MiddleBot_Back__Cover_MiddleBot_Back__Cover_MiddleBot_Back.glb",
+   "color": [
+    0.894118,
+    0.894118,
+    0.894118
+   ]
+  },
+  {
+   "name": "bottom_cover_back__bottom_cover_back__bottom_cover_back__bottom_cover_back",
+   "parent": "cover_middlebot_back__cover_middlebot_back__cover_middlebot_back__cover_middlebot_back",
+   "joint": {
+    "name": "base_extrusion_fastened_joint_14",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    1.73472e-18,
+    -6.93889e-18,
+    1.73472e-18
+   ],
+   "rpy": [
+    6.93889e-18,
+    5.42101e-18,
+    1.88079e-35
+   ],
+   "visual": null,
+   "mesh": "Bottom_Cover_Back__Bottom_Cover_Back__Bottom_Cover_Back__Bottom_Cover_Back.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "mirror30__mirror30",
+   "parent": "battery_terminal__battery_terminal",
+   "joint": {
+    "name": "base_extrusion_fastened_joint_10",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    1.73472e-18,
+    -6.93889e-18,
+    0.0
+   ],
+   "rpy": [
+    -4.51029e-51,
+    -1.17094e-17,
+    7.70372e-34
+   ],
+   "visual": null,
+   "mesh": "Mirror30__Mirror30.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "right_wheel_cap__right_wheel_cap",
+   "parent": "mirror30__mirror30",
+   "joint": {
+    "name": "base_extrusion_fastened_joint_18",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    1.73472e-18,
+    -6.93889e-18,
+    0.0
+   ],
+   "rpy": [
+    -4.51029e-51,
+    -1.17094e-17,
+    7.70372e-34
+   ],
+   "visual": null,
+   "mesh": "Right_Wheel_Cap__Right_Wheel_Cap.glb",
+   "color": [
+    0.301961,
+    0.301961,
+    0.301961
+   ]
+  },
+  {
+   "name": "left_wheel_cap__left_wheel_cap",
+   "parent": "right_wheel_cap__right_wheel_cap",
+   "joint": {
+    "name": "base_extrusion_fastened_joint_16",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    1.73472e-18,
+    -6.93889e-18,
+    0.0
+   ],
+   "rpy": [
+    -4.51029e-51,
+    -1.17094e-17,
+    7.70372e-34
+   ],
+   "visual": null,
+   "mesh": "Left_wheel_cap__Left_wheel_cap.glb",
+   "color": [
+    0.301961,
+    0.301961,
+    0.301961
+   ]
+  },
+  {
+   "name": "head__head__head__head",
+   "parent": "left_wheel_cap__left_wheel_cap",
+   "joint": {
+    "name": "base_extrusion_fastened_joint_15",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    1.73472e-18,
+    -6.93889e-18,
+    0.0
+   ],
+   "rpy": [
+    -4.51029e-51,
+    -1.17094e-17,
+    7.70372e-34
+   ],
+   "visual": null,
+   "mesh": "Head__Head__Head__Head.glb",
+   "color": [
+    0.894118,
+    0.894118,
+    0.894118
+   ]
+  },
+  {
+   "name": "camera_cover__camera_cover__camera_cover__camera_cover",
+   "parent": "head__head__head__head",
+   "joint": {
+    "name": "base_extrusion_fastened_joint_6",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    1.73472e-18,
+    -6.93889e-18,
+    0.0
+   ],
+   "rpy": [
+    -4.51029e-51,
+    -1.17094e-17,
+    7.70372e-34
+   ],
+   "visual": null,
+   "mesh": "Camera_Cover__Camera_Cover__Camera_Cover__Camera_Cover.glb",
+   "color": [
+    0.25098,
+    0.25098,
+    0.25098
+   ]
+  },
+  {
+   "name": "head_cover__head_cover__head_cover__head_cover",
+   "parent": "camera_cover__camera_cover__camera_cover__camera_cover",
+   "joint": {
+    "name": "base_extrusion_fastened_joint_7",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    1.73472e-18,
+    -6.93889e-18,
+    0.0
+   ],
+   "rpy": [
+    -4.51029e-51,
+    -1.17094e-17,
+    7.70372e-34
+   ],
+   "visual": null,
+   "mesh": "Head_Cover__Head_Cover__Head_Cover__Head_Cover.glb",
+   "color": [
+    0.894118,
+    0.894118,
+    0.894118
+   ]
+  },
+  {
+   "name": "right_wheel_tire__right_wheel_tire",
+   "parent": "head_cover__head_cover__head_cover__head_cover",
+   "joint": {
+    "name": "base_extrusion_fastened_joint_11",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    1.73472e-18,
+    -6.93889e-18,
+    0.0
+   ],
+   "rpy": [
+    -4.51029e-51,
+    -1.17094e-17,
+    7.70372e-34
+   ],
+   "visual": null,
+   "mesh": "Right_Wheel_Tire__Right_Wheel_Tire.glb",
+   "color": [
+    0.301961,
+    0.301961,
+    0.301961
+   ]
+  },
+  {
+   "name": "left_wheel_tire__left_wheel_tire",
+   "parent": "right_wheel_tire__right_wheel_tire",
+   "joint": {
+    "name": "base_extrusion_fastened_joint_13",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    1.73472e-18,
+    -6.93889e-18,
+    0.0
+   ],
+   "rpy": [
+    -4.51029e-51,
+    -1.17094e-17,
+    7.70372e-34
+   ],
+   "visual": null,
+   "mesh": "Left_Wheel_Tire__Left_Wheel_Tire.glb",
+   "color": [
+    0.301961,
+    0.301961,
+    0.301961
+   ]
+  },
+  {
+   "name": "arm_base",
+   "parent": "main_extrusion__main_extrusion__main_extrusion__main_extrusion",
+   "joint": {
+    "name": "arm_base_frame",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    -0.01134221138701112,
+    0.04723714002888056,
+    -5.318379244635435e-07
+   ],
+   "rpy": [
+    1.5707986828490839,
+    1.7882110546301158e-07,
+    5.0519484442461774e-05
+   ],
+   "visual": null,
+   "mesh": null,
+   "color": [
+    0.8,
+    0.8,
+    0.8
+   ]
+  },
+  {
+   "name": "shoulder__shoulder",
+   "parent": "arm_base",
+   "joint": {
+    "name": "rj0",
+    "type": "prismatic",
+    "lower": -1.03044,
+    "upper": 0.0,
+    "mimic": null
+   },
+   "xyz": [
+    7.84414955213e-09,
+    -0.0274999999999,
+    1.4057287444693842
+   ],
+   "rpy": [
+    9.79317772029e-12,
+    3.67320510279e-06,
+    2.85246774297e-07
+   ],
+   "visual": {
+    "xyz": [
+     0.0112151,
+     0.0286011,
+     -1.35824
+    ],
+    "rpy": [
+     3.14159265359,
+     -0.0,
+     0.0
+    ]
+   },
+   "mesh": "Shoulder__Shoulder.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "shoulder_knuckle__shoulder_knuckle",
+   "parent": "shoulder__shoulder",
+   "joint": {
+    "name": "rj1",
+    "type": "revolute",
+    "lower": -2.094395,
+    "upper": 2.094395,
+    "mimic": null
+   },
+   "xyz": [
+    -0.00793876834457,
+    -0.0857475264263,
+    -0.144638109056
+   ],
+   "rpy": [
+    1.30019908589,
+    0.252679529658,
+    -0.331041194688
+   ],
+   "visual": {
+    "xyz": [
+     0.28566220547,
+     -1.1074513874,
+     -0.425773343683
+    ],
+    "rpy": [
+     1.84139361473,
+     0.252680186341,
+     0.331038749783
+    ]
+   },
+   "mesh": "Shoulder_Knuckle__Shoulder_Knuckle.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "bicep__bicep",
+   "parent": "shoulder_knuckle__shoulder_knuckle",
+   "joint": {
+    "name": "rj2",
+    "type": "revolute",
+    "lower": -2.094395,
+    "upper": 2.094395,
+    "mimic": null
+   },
+   "xyz": [
+    -0.0345870699184,
+    -0.0799863449379,
+    -0.0310961998269
+   ],
+   "rpy": [
+    1.57079605244,
+    -0.00357221325976,
+    1.8474162273
+   ],
+   "visual": {
+    "xyz": [
+     -1.08044238915,
+     -0.390199904715,
+     0.0283732162424
+    ],
+    "rpy": [
+     1.62259962837,
+     -1.31221410986,
+     -1.36262971785
+    ]
+   },
+   "mesh": "Bicep__Bicep.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "bicep_cover__bicep_cover",
+   "parent": "bicep__bicep",
+   "joint": {
+    "name": "rj2_fastened_joint",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    -1.08044238915,
+    -0.390199904715,
+    0.0283732162424
+   ],
+   "rpy": [
+    1.62259962837,
+    -1.31221410986,
+    -1.36262971785
+   ],
+   "visual": null,
+   "mesh": "Bicep_Cover__Bicep_Cover.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "forearm__forearm",
+   "parent": "bicep__bicep",
+   "joint": {
+    "name": "rj3",
+    "type": "revolute",
+    "lower": -2.094395,
+    "upper": 2.094395,
+    "mimic": null
+   },
+   "xyz": [
+    -0.140145871978,
+    -0.0763872880607,
+    0.0558851310302
+   ],
+   "rpy": [
+    0.0407503614628,
+    -1.308774278,
+    -1.34835179448
+   ],
+   "visual": {
+    "xyz": [
+     -0.000283681312204,
+     -0.986812299969,
+     -0.0688189770928
+    ],
+    "rpy": [
+     1.57498814512,
+     -0.00351664735729,
+     -0.00353141945616
+    ]
+   },
+   "mesh": "Forearm__Forearm.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "forearm_cover__forearm_cover",
+   "parent": "forearm__forearm",
+   "joint": {
+    "name": "rj3_fastened_joint",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    -0.000283681312204,
+    -0.986812299969,
+    -0.0688189770928
+   ],
+   "rpy": [
+    1.57498814512,
+    -0.00351664735729,
+    -0.00353141945616
+   ],
+   "visual": null,
+   "mesh": "Forearm_Cover__Forearm_Cover.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "forearm_rotation__forearm_rotation",
+   "parent": "forearm__forearm",
+   "joint": {
+    "name": "rj4",
+    "type": "revolute",
+    "lower": -2.094395,
+    "upper": 2.094395,
+    "mimic": null
+   },
+   "xyz": [
+    -0.026394022686,
+    -0.124869857938,
+    0.0320705424258
+   ],
+   "rpy": [
+    1.5706721164,
+    0.813394470638,
+    3.09537483234
+   ],
+   "visual": {
+    "xyz": [
+     0.064108392959,
+     -0.080583299943,
+     -0.860955037204
+    ],
+    "rpy": [
+     -3.13751960024,
+     0.00950246880054,
+     -2.33171357261
+    ]
+   },
+   "mesh": "Forearm_Rotation__Forearm_Rotation.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "wrist_knuckle__wrist_knuckle",
+   "parent": "forearm_rotation__forearm_rotation",
+   "joint": {
+    "name": "rj5",
+    "type": "revolute",
+    "lower": -2.094395,
+    "upper": 2.094395,
+    "mimic": null
+   },
+   "xyz": [
+    -0.0131274174791,
+    -0.0148749771559,
+    -0.0327430850179
+   ],
+   "rpy": [
+    1.57079632679,
+    -1.37217251185,
+    -0.711560036946
+   ],
+   "visual": {
+    "xyz": [
+     -0.791586194978,
+     -0.264038463999,
+     -0.0274632002715
+    ],
+    "rpy": [
+     1.62153197318,
+     -1.36982431799,
+     -1.41970853491
+    ]
+   },
+   "mesh": "Wrist_Knuckle__Wrist_Knuckle.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "hand__hand",
+   "parent": "wrist_knuckle__wrist_knuckle",
+   "joint": {
+    "name": "rj6",
+    "type": "revolute",
+    "lower": -2.094395,
+    "upper": 2.094395,
+    "mimic": null
+   },
+   "xyz": [
+    -0.048011063802,
+    0.0111601874515,
+    -0.0199285718201
+   ],
+   "rpy": [
+    1.57079633063,
+    -1.39895819397,
+    -2.95327586221
+   ],
+   "visual": {
+    "xyz": [
+     0.158112192231,
+     -0.771278690689,
+     -0.0790064591971
+    ],
+    "rpy": [
+     1.51922578538,
+     0.199948606146,
+     0.189956115004
+    ]
+   },
+   "mesh": "Hand__Hand.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "wrist_cam__wrist_cam",
+   "parent": "hand__hand",
+   "joint": {
+    "name": "rj6_fastened_joint_1",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    0.158112192231,
+    -0.771278690689,
+    -0.0790064591971
+   ],
+   "rpy": [
+    1.51922578538,
+    0.199948606146,
+    0.189956115004
+   ],
+   "visual": null,
+   "mesh": "Wrist_Cam__Wrist_Cam.glb",
+   "color": [
+    0.792157,
+    0.819608,
+    0.933333
+   ]
+  },
+  {
+   "name": "hand_motor_mount__hand_motor_mount",
+   "parent": "wrist_cam__wrist_cam",
+   "joint": {
+    "name": "rj6_fastened_joint",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    0.0,
+    2.22045e-16,
+    6.93889e-18
+   ],
+   "rpy": [
+    -2.11758e-22,
+    -1.69407e-21,
+    -2.20722e-23
+   ],
+   "visual": null,
+   "mesh": "Hand_Motor_Mount__Hand_Motor_Mount.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "left_finger__left_finger",
+   "parent": "hand__hand",
+   "joint": {
+    "name": "right_left_gripper",
+    "type": "revolute",
+    "lower": 0.0,
+    "upper": 1.0,
+    "mimic": null
+   },
+   "xyz": [
+    0.0413008234875,
+    -0.0450475758206,
+    -0.037214733194
+   ],
+   "rpy": [
+    1.57079641057,
+    0.252467062787,
+    1.80442239386
+   ],
+   "visual": {
+    "xyz": [
+     -0.700466770107,
+     -0.222748940096,
+     -0.0540855256445
+    ],
+    "rpy": [
+     1.73578349795,
+     -1.36619674515,
+     -1.53050584004
+    ]
+   },
+   "mesh": "Left_Finger__Left_Finger.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "right_finger__right_finger",
+   "parent": "hand__hand",
+   "joint": {
+    "name": "right_right_gripper",
+    "type": "revolute",
+    "lower": 0.0,
+    "upper": 1.0,
+    "mimic": {
+     "joint": "right_left_gripper",
+     "multiplier": 1.0,
+     "offset": 0.0
+    }
+   },
+   "xyz": [
+    0.0413008570208,
+    -0.0450475753712,
+    -0.00313574940202
+   ],
+   "rpy": [
+    1.57079624551,
+    0.15132620504,
+    -1.33717030903
+   ],
+   "visual": {
+    "xyz": [
+     0.736527086189,
+     0.0353731073513,
+     0.0544734810646
+    ],
+    "rpy": [
+     -1.40580915564,
+     1.36619674515,
+     -1.20729352421
+    ]
+   },
+   "mesh": "Right_Finger__Right_Finger.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "shoulder_cover__shoulder_cover",
+   "parent": "shoulder__shoulder",
+   "joint": {
+    "name": "rj0_fastened_joint",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    0.0112151,
+    0.0286011,
+    -1.35824
+   ],
+   "rpy": [
+    3.14159265359,
+    1.46937e-39,
+    -2.81907e-23
+   ],
+   "visual": null,
+   "mesh": "Shoulder_Cover__Shoulder_Cover.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "l_shoulder__shoulder",
+   "parent": "arm_base",
+   "joint": {
+    "name": "lj0",
+    "type": "prismatic",
+    "lower": -1.03044,
+    "upper": 0.0,
+    "mimic": null
+   },
+   "xyz": [
+    -7.84414955213e-09,
+    0.0274999999999,
+    1.4057288904093843
+   ],
+   "rpy": [
+    5.307169793090001e-06,
+    3.67320510276e-06,
+    2.85256322693e-07
+   ],
+   "visual": {
+    "xyz": [
+     0.0112151,
+     -0.0286011,
+     -1.35824
+    ],
+    "rpy": [
+     3.14159265359,
+     -0.0,
+     0.0
+    ]
+   },
+   "mesh": "Shoulder__Shoulder_Mirrored.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "l_shoulder_knuckle__shoulder_knuckle",
+   "parent": "l_shoulder__shoulder",
+   "joint": {
+    "name": "lj1",
+    "type": "revolute",
+    "lower": -2.094395,
+    "upper": 2.094395,
+    "mimic": null
+   },
+   "xyz": [
+    -0.00793876834457,
+    0.0857475264263,
+    -0.144638109056
+   ],
+   "rpy": [
+    1.84139366177,
+    -0.252680843025,
+    0.192562310965
+   ],
+   "visual": {
+    "xyz": [
+     -0.306334790828,
+     -1.10191218662,
+     0.425773343683
+    ],
+    "rpy": [
+     1.30019903886,
+     -0.252680186341,
+     -0.19255986606
+    ]
+   },
+   "mesh": "Shoulder_Knuckle__Shoulder_Knuckle_Mirrored.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "l_bicep__bicep",
+   "parent": "l_shoulder_knuckle__shoulder_knuckle",
+   "joint": {
+    "name": "lj2",
+    "type": "revolute",
+    "lower": -2.094395,
+    "upper": 2.094395,
+    "mimic": null
+   },
+   "xyz": [
+    -0.0699464453572,
+    -0.0519766828872,
+    0.0310961998269
+   ],
+   "rpy": [
+    1.57079660115,
+    0.00357221325976,
+    1.32381761146
+   ],
+   "visual": {
+    "xyz": [
+     -1.08044238915,
+     0.390199904715,
+     0.0283732162424
+    ],
+    "rpy": [
+     -1.62259962837,
+     -1.31221410986,
+     1.36262971785
+    ]
+   },
+   "mesh": "Bicep__Bicep_Mirrored.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "l_forearm__forearm",
+   "parent": "l_bicep__bicep",
+   "joint": {
+    "name": "lj3",
+    "type": "revolute",
+    "lower": -2.094395,
+    "upper": 2.094395,
+    "mimic": null
+   },
+   "xyz": [
+    -0.140145871978,
+    0.0763872880607,
+    0.0558851310302
+   ],
+   "rpy": [
+    3.07467374061,
+    -1.30839578872,
+    1.37544635341
+   ],
+   "visual": {
+    "xyz": [
+     0.00665687119234,
+     -0.986789887418,
+     0.0688189770928
+    ],
+    "rpy": [
+     1.56660450847,
+     0.00351664735729,
+     0.00350193705058
+    ]
+   },
+   "mesh": "Forearm__Forearm_Mirrored.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "l_forearm_rotation__forearm_rotation",
+   "parent": "l_forearm__forearm",
+   "joint": {
+    "name": "lj4",
+    "type": "revolute",
+    "lower": -2.094395,
+    "upper": 2.094395,
+    "mimic": null
+   },
+   "xyz": [
+    -0.0255151228706,
+    -0.125052406454,
+    -0.0320705424258
+   ],
+   "rpy": [
+    1.57092053719,
+    -0.813394470638,
+    3.10240818885
+   ],
+   "visual": {
+    "xyz": [
+     0.064108392959,
+     0.080583299943,
+     -0.860955037204
+    ],
+    "rpy": [
+     3.13751960024,
+     0.00950246880054,
+     2.33171357261
+    ]
+   },
+   "mesh": "Forearm_Rotation__Forearm_Rotation_Mirrored.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "l_wrist_knuckle__wrist_knuckle",
+   "parent": "l_forearm_rotation__forearm_rotation",
+   "joint": {
+    "name": "lj5",
+    "type": "revolute",
+    "lower": -2.094395,
+    "upper": 2.094395,
+    "mimic": null
+   },
+   "xyz": [
+    -0.0131274174791,
+    0.0148749771559,
+    -0.0327430850179
+   ],
+   "rpy": [
+    -1.57079632679,
+    -1.37217251185,
+    0.711560036946
+   ],
+   "visual": {
+    "xyz": [
+     -0.791586194978,
+     0.264038463999,
+     -0.0274632002715
+    ],
+    "rpy": [
+     -1.62153197318,
+     -1.36982431799,
+     1.41970853491
+    ]
+   },
+   "mesh": "Wrist_Knuckle__Wrist_Knuckle_Mirrored.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "l_hand__hand",
+   "parent": "l_wrist_knuckle__wrist_knuckle",
+   "joint": {
+    "name": "lj6",
+    "type": "revolute",
+    "lower": -2.094395,
+    "upper": 2.094395,
+    "mimic": null
+   },
+   "xyz": [
+    -0.048011063802,
+    -0.0111601874515,
+    -0.0199285718201
+   ],
+   "rpy": [
+    -1.5707963239,
+    -1.34221899307,
+    -0.188316797975
+   ],
+   "visual": {
+    "xyz": [
+     -0.155039809149,
+     -0.771902158063,
+     0.0790064591971
+    ],
+    "rpy": [
+     1.62236686821,
+     -0.199948606146,
+     -0.210459351552
+    ]
+   },
+   "mesh": "Hand__Hand_Mirrored.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "l_wrist_cam__wrist_cam",
+   "parent": "l_hand__hand",
+   "joint": {
+    "name": "lj6_fastened_joint_1",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    -0.155039809149,
+    -0.771902158063,
+    0.0790064591971
+   ],
+   "rpy": [
+    1.62236686821,
+    -0.199948606146,
+    -0.210459351552
+   ],
+   "visual": null,
+   "mesh": "Wrist_Cam__Wrist_Cam_Mirrored.glb",
+   "color": [
+    0.792157,
+    0.819608,
+    0.933333
+   ]
+  },
+  {
+   "name": "l_hand_motor_mount__hand_motor_mount",
+   "parent": "l_wrist_cam__wrist_cam",
+   "joint": {
+    "name": "lj6_fastened_joint",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    0.0,
+    -2.22045e-16,
+    6.93889e-18
+   ],
+   "rpy": [
+    2.11758e-22,
+    -1.69407e-21,
+    2.20722e-23
+   ],
+   "visual": null,
+   "mesh": "Hand_Motor_Mount__Hand_Motor_Mount_Mirrored.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "l_right_finger__right_finger",
+   "parent": "l_hand__hand",
+   "joint": {
+    "name": "left_right_gripper",
+    "type": "revolute",
+    "lower": 0.0,
+    "upper": 1.0,
+    "mimic": {
+     "joint": "left_left_gripper",
+     "multiplier": 1.0,
+     "offset": 0.0
+    }
+   },
+   "xyz": [
+    0.0204743340909,
+    -0.0575833871964,
+    0.00313574940202
+   ],
+   "rpy": [
+    1.5707962438,
+    -0.252466986075,
+    1.40400691098
+   ],
+   "visual": {
+    "xyz": [
+     -0.691191962618,
+     0.256860032363,
+     -0.0544734810646
+    ],
+    "rpy": [
+     -1.73578349795,
+     -1.36619674515,
+     1.53050593826
+    ]
+   },
+   "mesh": "Right_Finger__Right_Finger_Mirrored.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "l_left_finger__left_finger",
+   "parent": "l_hand__hand",
+   "joint": {
+    "name": "left_left_gripper",
+    "type": "revolute",
+    "lower": 0.0,
+    "upper": 1.0,
+    "mimic": null
+   },
+   "xyz": [
+    0.0204743030349,
+    -0.0575833745389,
+    0.037214733194
+   ],
+   "rpy": [
+    1.57079640885,
+    -0.151326128328,
+    -1.73758575959
+   ],
+   "visual": {
+    "xyz": [
+     0.731653422859,
+     -0.0703850492471,
+     0.0540855256445
+    ],
+    "rpy": [
+     1.40580915564,
+     1.36619674515,
+     1.20729362243
+    ]
+   },
+   "mesh": "Left_Finger__Left_Finger_Mirrored.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "l_forearm_cover__forearm_cover",
+   "parent": "l_forearm__forearm",
+   "joint": {
+    "name": "lj3_fastened_joint",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    0.00665687119234,
+    -0.986789887418,
+    0.0688189770928
+   ],
+   "rpy": [
+    1.56660450847,
+    0.00351664735729,
+    0.00350193705058
+   ],
+   "visual": null,
+   "mesh": "Forearm_Cover__Forearm_Cover_Mirrored.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "l_bicep_cover__bicep_cover",
+   "parent": "l_bicep__bicep",
+   "joint": {
+    "name": "lj2_fastened_joint",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    -1.08044238915,
+    0.390199904715,
+    0.0283732162424
+   ],
+   "rpy": [
+    -1.62259962837,
+    -1.31221410986,
+    1.36262971785
+   ],
+   "visual": null,
+   "mesh": "Bicep_Cover__Bicep_Cover_Mirrored.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "l_shoulder_cover__shoulder_cover",
+   "parent": "l_shoulder__shoulder",
+   "joint": {
+    "name": "lj0_fastened_joint",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    0.0112151,
+    -0.0286011,
+    -1.35824
+   ],
+   "rpy": [
+    -3.14159265359,
+    1.46937e-39,
+    2.81907e-23
+   ],
+   "visual": null,
+   "mesh": "Shoulder_Cover__Shoulder_Cover_Mirrored.glb",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "right_eef",
+   "parent": "hand__hand",
+   "joint": {
+    "name": "right_eef_frame",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    0.0337039299018,
+    -0.14163013575,
+    -0.020175238896
+   ],
+   "rpy": [
+    1.57079632679,
+    -1.83250549097e-13,
+    0.233626038074
+   ],
+   "visual": null,
+   "mesh": null,
+   "color": [
+    0.8,
+    0.8,
+    0.8
+   ]
+  },
+  {
+   "name": "left_eef",
+   "parent": "l_hand__hand",
+   "joint": {
+    "name": "left_eef_frame",
+    "type": "fixed",
+    "lower": null,
+    "upper": null,
+    "mimic": null
+   },
+   "xyz": [
+    -0.0241696460033,
+    -0.143564892837,
+    0.020175238896
+   ],
+   "rpy": [
+    1.57079632679,
+    1.83239434848e-13,
+    -0.166789428481
+   ],
+   "visual": null,
+   "mesh": null,
+   "color": [
+    0.8,
+    0.8,
+    0.8
+   ]
+  }
+ ],
+ "check": {
+  "right_eef": [
+   -0.017121931,
+   -0.098180233,
+   0.714894895
+  ],
+  "left_eef": [
+   -0.017121987,
+   0.098184051,
+   0.714895416
+  ],
+  "left_wheel_tire__left_wheel_tire": [
+   0.011339825,
+   6.45e-07,
+   0.077629354
+  ],
+  "head__head__head__head": [
+   0.011339825,
+   6.45e-07,
+   0.077629354
+  ]
+ }
+}
