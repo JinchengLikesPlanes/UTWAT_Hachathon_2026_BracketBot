@@ -179,29 +179,65 @@ persistence, concept checks, and a mobile layout check. Screenshots and
 `report.json` land in `artifacts/learning-lab-qa/`. Student RL checkpoints are
 written to `lesson_runs/` (git-ignored).
 
-## Play a rally match
+## Play a rally match (the real pong game)
 
-The default window now lets you play with a mouse-controlled physical paddle,
-against the robot's arm, lift and wheel-driven chassis controller:
+A desktop window where you rally against the trained BracketBot in MuJoCo physics: mouse-driven
+paddle for you, arm, lift and wheel-driven chassis for the robot. First to 11, win by two.
+
+### 1. One-time setup
+
+Needs Python 3.12 and [uv](https://docs.astral.sh/uv/). From the repo root:
+
+```sh
+uv sync --locked
+```
+
+This creates `.venv/` with MuJoCo, Gymnasium, Stable-Baselines3, PyTorch and GLFW. Nothing else
+to download: the trained policy (`runs/rally-wheels-match-candidate0/…`) and the robot meshes
+ship with the repo.
+
+### 2. Start the game
+
+Either of these works; both open the same window.
+
+**From a terminal** (run with plain `python`, not `mjpython`, on macOS):
 
 ```sh
 .venv/bin/python -m bracket_pong.play
 ```
 
-Move the mouse to position the blue paddle; click to swing. Use **[ / ]** to
-decrease/increase swing power. Right-drag orbits the view during play, scroll
-zooms, and C resets the camera. Camera dragging leaves the paddle in place.
-Space serves or
-starts the next point. Esc pauses, R replays the last point, N starts a new
-match, and Q quits. Matches are first to 11, win by two. Keys 1–3 select
-available checkpoints between points, not calibrated difficulty levels.
-Add `--record-stats artifacts/my-playtest.json` to save local point outcomes
-on exit, or `--model runs/my-wheels/best_model.zip` to select a wheels-v2 policy.
-Without a compatible checkpoint the match uses the analytic baseline controller.
-The supplied default is now **Trained wheel RL**, selected through
-`runs/wheels-default.json`. It legally returned 67/100 held-out human serves
-versus 16/100 for the baseline; this is not a full-court coverage result.
-Restart an already-open window to load the new policy.
+**From the browser game:** run `python3 game/serve.py`, open <http://127.0.0.1:8000>, finish
+Level 2 ("Teach the Rally") and press **Start the pong game** on the badge card. `serve.py` starts
+the command above for you (`POST /launch`); a plain `python3 -m http.server` cannot, so the
+button will tell you to use the terminal instead.
+
+The window must be opened from a logged-in desktop session (it needs an OpenGL context).
+
+### 3. Controls
+
+| Input | Action |
+|---|---|
+| Mouse move | Position the blue paddle |
+| Click | Swing |
+| `[` / `]` | Decrease / increase swing power |
+| Space | Serve, or start the next point |
+| Right-drag / scroll / `C` | Orbit / zoom / reset the camera (the paddle stays put) |
+| `1`–`3` | Switch between available checkpoints between points (not difficulty levels) |
+| Esc / `R` / `N` / `Q` | Pause / replay last point / new match / quit |
+
+### 4. Options
+
+```sh
+.venv/bin/python -m bracket_pong.play --model runs/my-wheels/best_model.zip     # use your own wheels-v2 policy
+.venv/bin/python -m bracket_pong.play --record-stats artifacts/my-playtest.json  # save point outcomes on exit
+```
+
+Without `--model` the game loads the checkpoint named in `runs/wheels-default.json`
+(**Trained wheel RL**, `rally-wheels-match-candidate0` at 150k steps). It legally returned 67/100
+held-out human serves versus 16/100 for the analytic baseline; this is not a full-court coverage
+result. If no compatible checkpoint is found the match falls back to the analytic baseline
+controller. Restart an already-open window to load a new policy. How the policy was trained is
+described in [How the RL works](#how-the-rl-works).
 
 This is a working experimental game, **not yet a robust full-court opponent**.
 The default match uses a free chassis, independent torque-limited wheel drives,
