@@ -1,4 +1,4 @@
-/* DuoBotics design language: one warm neutral ramp, Inter, hairlines, grain. See the design doc. */
+/* DuoBotics design language: one warm neutral ramp, Inter, hairlines. See docs/UI_DESIGN.md (grain deliberately left out). */
 :root {
   --hero: #FDFBF9; --paper: #FBF8F5; --band: #F7F2EB; --band-2: #F4EFE8; --band-3: #EFE7DD; --card: #FFFFFF;
   --line: rgba(23, 23, 23, .12); --line-2: rgba(23, 23, 23, .24);
@@ -16,20 +16,12 @@ h1, h2, h3 { margin: 0; text-wrap: balance; }
 p { margin: 0; }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
-/* Page-wide grain: fixed, behind everything, stepped translate loop so it reads as live sensor noise. */
-body::before { content: ''; position: fixed; inset: -60px; z-index: 0; pointer-events: none; background: var(--grain) 0 0 / 240px 240px repeat; opacity: .32; animation: grain 1.2s steps(1, end) infinite; }
-@keyframes grain {
-  0% { translate: 0 0 } 10% { translate: -12px 8px } 20% { translate: 14px -10px } 30% { translate: -6px 16px } 40% { translate: 10px 6px }
-  50% { translate: -16px -4px } 60% { translate: 4px 12px } 70% { translate: -10px -14px } 80% { translate: 16px 2px } 90% { translate: -2px -8px } 100% { translate: 0 0 }
-}
 @keyframes reveal { from { opacity: 0; translate: 0 16px } to { opacity: 1; translate: 0 0 } }
 .home, .lab-shell { position: relative; z-index: 1; }
 
 /* ---- Home ------------------------------------------------------------------------------------ */
 .home { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
 .hero { position: relative; height: calc(100svh - 24px); min-height: 480px; display: flex; flex-direction: column; background: var(--hero); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-.hero::before { content: ''; position: absolute; inset: -60px; pointer-events: none; background: var(--grain) 0 0 / 240px 240px repeat; opacity: .45; }
-.hero > * { position: relative; }
 .home-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 28px 0; }
 .brand { font-weight: 600; font-size: 15px; letter-spacing: -0.02em; }
 .meta { font-size: 13.5px; color: var(--ink-3); }

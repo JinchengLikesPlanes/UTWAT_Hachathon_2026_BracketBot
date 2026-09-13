@@ -21,14 +21,13 @@ page falls back to the system font and nothing else changes.
 | Path | What |
 |---|---|
 | `index.html`, `main.js` | page, boot, router, fixed-step loop |
-| `style.css`, `grain.css` | the DuoBotics look ([docs/UI_DESIGN.md](../docs/UI_DESIGN.md)); `grain.css` is the inlined noise tile |
 | `serve.py` | local server + pong-game launcher |
 | `logic.js` | platform stub (solo game) |
 | `strings.js` | every player-visible string |
 | `state.js`, `rng.js` | localStorage progress (`bb-game-v1`), seeded PRNG |
 | `robot.js`, `scene.js` | URDF → Three.js tree (`buildRobot`, `setJoint`, `makeSpinner`), renderer/camera |
 | `ui.js`, `audio.js`, `hub.js` | overlay kit, synthesised SFX, hub (a winding numbered path in mission order with step dots and badges) |
-| `style.css`, `grain.css` | the paper-and-ink design tokens and layout (`docs/UI_DESIGN.md`); the animated grain overlay behind the UI |
+| `style.css` | the paper-and-ink design tokens and layout (`docs/UI_DESIGN.md`); no grain overlay |
 | `levels/pid.js`, `rl.js`, `vision.js` | the three missions; `levels/common.js` shared plumbing |
 | `sim/pid.js` | 50 Hz PID over a calibrated 1-D chassis (same law/gains/disturbances as the lab) |
 | `sim/rally.js` | 2-D serve, 15-action paddle, linear softmax policy, REINFORCE, 20-serve eval set |

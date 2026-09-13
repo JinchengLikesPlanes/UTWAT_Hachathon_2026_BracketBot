@@ -9,11 +9,11 @@ export const STR = {
   },
   hub: {
     title: 'Teach BracketBot to play pong.',
-    subtitle: 'One mission, three skills, in order: stand up, see the ball, then learn to hit it. Nothing here is faked. Every step runs the same maths as the real robot.',
+    subtitle: 'Three skills, in order. Every step runs the same maths as the real robot.',
     levels: {
-      pid: { name: 'Stand up', blurb: 'A robot that cannot stand cannot play. Tune the balancing loop so BracketBot stays up and holds its spot.' },
-      vision: { name: 'See the ball', blurb: 'Use the depth camera on its head to find the ball, measure its x, y and speed, and predict where it will arrive.' },
-      rl: { name: 'Play pong', blurb: 'Feed those numbers to a brain that learns by trial and error, train it, and test it on serves it never saw.' },
+      pid: { name: 'Stand up', blurb: 'Tune the balancing loop so BracketBot stays up and holds its spot.' },
+      vision: { name: 'See the ball', blurb: 'Use the head camera to find the ball and predict where it will arrive.' },
+      rl: { name: 'Play pong', blurb: 'Train a brain by trial and error, then test it on serves it never saw.' },
     },
     progress: 'Step {n} of {total}',
     badge: 'Badge earned',

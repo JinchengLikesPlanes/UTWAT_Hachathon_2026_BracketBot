@@ -101,8 +101,8 @@ policy was trained with PPO on the same five stages (see [How the RL works](#how
 
 ### Look and feel
 
-One warm paper-and-ink palette (`game/style.css`), Inter, hairline borders, a light grain over
-the 3-D scene, and quiet copy, following [docs/UI_DESIGN.md](docs/UI_DESIGN.md). Charts use ink for the player's signal and green only for
+One warm paper-and-ink palette (`game/style.css`), Inter, hairline borders, a flat paper
+ground behind the 3-D scene, and quiet copy, following [docs/UI_DESIGN.md](docs/UI_DESIGN.md). Charts use ink for the player's signal and green only for
 "truth" lines. The hub is a winding path with numbered nodes, in mission order, with step dots
 and badges. Textures and badges are procedural (`game/tools/procedural_assets.mjs`, manifest in
 `game/design/assets.csv`); the ping-pong table is charcoal on a paper floor.

@@ -2,7 +2,7 @@
 
 The reference implementation is `DuoBotics Landing v3.dc.html`. This document records the rules that produced it, so an older or inconsistent UI can be brought in line without guessing.
 
-Both UIs in this repo follow it: the teaching game (`game/style.css`, `game/grain.css`) and the Learning Lab (`web/src/styles.css`, `web/src/grain.css`). The grain tile is generated once (240×240 gaussian pixel noise, grayscale + alpha PNG) and inlined as `--grain` in each `grain.css`.
+Both UIs in this repo follow it: the teaching game (`game/style.css`) and the Learning Lab (`web/src/styles.css`). One deliberate exception: the grain layers (§3) were tried on both and removed, so the ground is flat warm paper.
 
 DuoBotics teaches robotics fundamentals in short lessons that end with a real self-balancing robot. The product is built on Bracket Bot. The interface has one job: make the hardware the most interesting thing on the screen.
 
