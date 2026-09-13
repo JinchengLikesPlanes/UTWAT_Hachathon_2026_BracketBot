@@ -16,6 +16,9 @@ a:hover{color:#6B6B6B}
 @keyframes v3rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @keyframes v3fade{from{opacity:0}to{opacity:1}}
 @keyframes v3noise{0%{transform:translate(0,0)}10%{transform:translate(-4%,-3%)}20%{transform:translate(-8%,2%)}30%{transform:translate(3%,-6%)}40%{transform:translate(-3%,6%)}50%{transform:translate(-8%,-3%)}60%{transform:translate(4%,2%)}70%{transform:translate(-2%,-5%)}80%{transform:translate(-7%,4%)}90%{transform:translate(2%,-2%)}100%{transform:translate(0,0)}}
+/* motion-demo tiles: a GIF per tile, label pinned on top */
+.tile-clip{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.tile-clip~span{background:rgba(255,255,255,.85);padding:4px 8px;border-radius:6px}
 /* hover states */
 .hv-lift:hover{transform:translateY(-1px);color:#0E1014!important}
 .hv-glass:hover{background:rgba(255,255,255,.75)!important;color:#0E1014!important}
@@ -70,18 +73,22 @@ a:hover{color:#6B6B6B}
   <div style="max-width:860px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px">
     <div data-reveal="" style="animation:v3fade .9s ease both;border-radius:14px;overflow:hidden;background:#F4EFE8;aspect-ratio:1/1;position:relative;display:flex;align-items:flex-end;padding:18px;box-sizing:border-box">
       <div style="position:absolute;inset:0;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.62' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E&quot;);background-size:300px 300px;opacity:.45;mix-blend-mode:multiply"></div>
+      <img class="tile-clip" src="media/demos/ping-pong-demo.gif" alt="The BracketBot ping pong demo" loading="lazy" decoding="async">
       <span style="position:relative;font-size:13px;font-weight:500;color:#0E1014">Motion graphics · Ping pong demo</span>
     </div>
     <div data-reveal="" style="animation:v3fade .9s ease .08s both;border-radius:14px;overflow:hidden;background:#EFE8DF;aspect-ratio:4/3;position:relative;align-self:center;display:flex;align-items:flex-end;padding:18px;box-sizing:border-box">
       <div style="position:absolute;inset:0;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E&quot;);background-size:300px 300px;opacity:.4;mix-blend-mode:multiply"></div>
+      <img class="tile-clip" src="media/demos/tune-the-gain.gif" alt="Tuning the balance gains in the sim" loading="lazy" decoding="async">
       <span style="position:relative;font-size:13px;font-weight:500;color:#0E1014">Motion graphics · tune the gain</span>
     </div>
     <div data-reveal="" style="animation:v3fade .9s ease .12s both;border-radius:14px;overflow:hidden;background:#F2ECE4;aspect-ratio:1/1;position:relative;display:flex;align-items:flex-end;padding:18px;box-sizing:border-box">
       <div style="position:absolute;inset:0;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E&quot;);background-size:300px 300px;opacity:.5;mix-blend-mode:multiply"></div>
+      <img class="tile-clip" src="media/demos/run-on-hardware.gif" alt="Running the lesson on the robot" loading="lazy" decoding="async">
       <span style="position:relative;font-size:13px;font-weight:500;color:#0E1014">Motion graphics · run on hardware</span>
     </div>
     <div data-reveal="" style="animation:v3fade .9s ease .16s both;border-radius:14px;overflow:hidden;background:#ECE4DA;aspect-ratio:4/3;position:relative;align-self:center;display:flex;align-items:flex-end;padding:18px;box-sizing:border-box">
       <div style="position:absolute;inset:0;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E&quot;);background-size:300px 300px;opacity:.44;mix-blend-mode:multiply"></div>
+      <img class="tile-clip" src="media/demos/progress-map.gif" alt="The lesson progress map" loading="lazy" decoding="async">
       <span style="position:relative;font-size:13px;font-weight:500;color:#0E1014">Motion graphics · progress map</span>
     </div>
   </div>
