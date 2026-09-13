@@ -27,7 +27,7 @@ Any static server works for everything else.
 | `levels/pid.js`, `rl.js`, `vision.js` | the three missions; `levels/common.js` shared plumbing |
 | `sim/pid.js` | 50 Hz PID over a calibrated 1-D chassis (same law/gains/disturbances as the lab) |
 | `sim/rally.js` | 2-D serve, 15-action paddle, linear softmax policy, REINFORCE, 20-serve eval set |
-| `sim/vision.js` | procedural photos, centre-crop features, 3→3 softmax classifier |
+| `sim/vision.js` | head depth-camera model (ray-cast colour + depth frames), hue-window detection, deprojection, velocity, bounce rule, crossing forecast |
 | `assets/robot/` | `robot.json` (baked from the URDF by `tools/bake_urdf.py`) + 50 Draco GLBs |
 | `assets/*.png`, `design/assets.csv` | textures, badges, hub background + manifest |
 | `vendor/three/` | pinned Three.js modules and the Draco decoder |

@@ -8,14 +8,19 @@
 > (recommended) or superpowers:executing-plans to implement Part B task-by-task.
 > Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** A standalone browser game in which kids (ages 10–13) complete small tasks with
-the *real* BracketBot model to learn PID control, the five stages of training an RL
-ping-pong policy, and simple visual machine learning — with nothing faked, and every task
-reproducible on the physical robot.
+**Goal:** A standalone browser game in which kids (ages 10–13) teach the *real* BracketBot
+model to play pong in three skills, in order: stand up (PID balancing), see the ball (depth-camera
+tracking that yields the ball's x, y and speed), and play pong (an RL policy that reads those
+numbers) — with nothing faked, and every task reproducible on the physical robot.
+
+**Story (revised 2026-09-13):** one mission — *teach BracketBot to play pong*. Level 1 makes it
+stand. Level 2 turns the head camera's colour + depth pictures into the four numbers a pong
+policy needs (x, y, vx, vy — the same observation `bracket_pong/rally.py` feeds its policy).
+Level 3 trains the policy on exactly those inputs. Each badge says which skill it unlocked.
 
 **Architecture:** One static web app (`game/`) — plain HTML/ES modules, Three.js (vendored)
 rendering the original URDF meshes, three self-contained JS simulations (`sim/`) that do
-real PID, real policy-gradient RL, and real softmax classification in the browser, and a
+real PID, real depth-camera ball tracking, and real policy-gradient RL in the browser, and a
 DOM overlay for controls. No server. Deployed with `higgsfield game deploy`; runs locally
 with `python3 -m http.server`.
 
@@ -53,12 +58,13 @@ visibly changes what BracketBot does, and the robot never pretends.*
 ### A2. Structure
 
 ```
-Hub ─┬─ Level 1  Hold the Line   (PID)      5 steps → badge
-     ├─ Level 2  Teach the Rally (RL)       5 steps → badge
-     └─ Level 3  Robot Eyes      (Vision)   5 steps → badge
+Hub ─┬─ Level 1  Stand Up      (PID)      5 steps → badge
+     ├─ Level 2  See the Ball  (Vision)   5 steps → badge
+     └─ Level 3  Play Pong     (RL)       7 steps → badge
 ```
 
-- Hub shows the three levels, progress (step n/5), badges, and a "Real robot" card per level.
+- Hub is a winding map in mission order (stand → see → play) with progress dots, badges, and a
+  "Real robot" card per level.
 - Levels unlock in any order (teachers may run one).
 - Each step: one instruction line, the scene, only the controls that step needs, a pass
   check, then NEXT. Feedback stays on screen until the player presses NEXT (never auto-advance).
@@ -67,7 +73,7 @@ Hub ─┬─ Level 1  Hold the Line   (PID)      5 steps → badge
 - Every level ends with a one-question concept check (multiple choice, retry allowed) and a
   "Try it on the real BracketBot" card (text from `docs/CLASSROOM_LABS.md`).
 
-### A3. Level 1 — Hold the Line (PID) — *revised 2026-09-13: balancing robot*
+### A3. Level 1 — Stand Up (PID) — *revised 2026-09-13: balancing robot*
 
 Scene: BracketBot on a floor with a target line, seen from the side; the whole robot tips about
 its wheel axle and rolls along one axis (camera follows). Two live graphs (tilt in degrees,
@@ -97,7 +103,7 @@ steady pull (0.8, 1.5, 8.0). Trial = 8 s. Stable = upright and |x| ≤ 15 cm ove
 
 After three failed exam attempts, show the reference gains as a hint; the player must still run.
 
-### A4. Level 2 — Teach the Rally (RL)
+### A4. Level 3 — Play Pong (RL)
 
 Scene: side view of the table; BracketBot at the near end; ball served from the far end.
 Paddle height maps to the mast carriage (`rj0`), paddle tilt to the wrist (`rj5`) — visible
@@ -139,27 +145,39 @@ Every simulation result also pops up in the middle of the screen (animated) with
 
 **Hub:** a Duolingo-style winding path — one big circular node per level (icon → badge when done, pulsing when current), a dotted trail (gold once finished), step dots per level, Play / Real robot buttons.
 
-### A5. Level 3 — Robot Eyes (Vision)
+### A5. Level 2 — See the Ball (Vision) — *revised 2026-09-13: ball tracking, not colour sorting*
 
-Scene: BracketBot's head camera view (a framed 2-D "photo" panel beside the 3D robot; the head
-link nods toward the sample). Samples are procedural "photos": background colour, centred
-object (circle with radial shading), lighting multiplier; deterministic from seed 11.
-Feature = mean RGB of the centre 40 % crop, divided by 255.
+Scene: the rally table; BracketBot stands behind the paddle plane so the camera cover on its
+head (1.575 m up, 0.055 m forward of the robot origin — measured from the URDF meshes) is the
+sim's camera, nodded 0.35 rad down. A blue wire frustum shows the camera's view. The panel shows
+the two pictures the camera produces every frame — colour (with the detection mask in green and
+a + at the centroid) and depth (bright = near) — plus a readout of x, y, vx, vy and the forecast.
 
-Classifier (`sim/vision.js`): linear 3→3 softmax, cross-entropy, SGD `lr = 0.45`, weight decay
-0.002, 180 epochs, fixed init (seed 7). Requires ≥ 2 examples per class. Same as the lab.
+Sim (`sim/vision.js`): 160×120 pinhole camera (vfov 50°, F = 128.7 px) ray-cast against the
+ball (r = 20 mm, orange, hue 24 ± 9 with shading), the table (wood, hue 36–44, painted lines),
+net, floor and wall; depth = distance along the optical axis, 8 mm 1 σ noise. The serve is the
+rally's own `makeServe` sampled at 30 fps until it crosses x = 0. Pipeline: hue window ±width,
+sat ≥ 0.5, val ≥ 0.3 → centroid → depth at that pixel (or F·r/r_px in "size" mode) → deproject →
+velocity from two frames `gap` apart, forecast from the gap's midpoint (a finite difference is the
+average speed, i.e. the speed at the midpoint) → bounce rule (skip if heights went down then up
+inside the window) → ballistic forecast of the crossing height. Decision = first frame with a
+forecast and measured x < 1.0 m; hit = |forecast − true crossing| ≤ 5 cm.
 
-Sets: train 18 (6 per class), test 12 (4 per class, different backgrounds/lighting), improve 6
-(hard cases: dim yellow on warm background, purple-leaning blue, orange-leaning red).
+Calibrated lessons (10 serves, seed 500): width 2 → found 81 %; 6–10 → 91 %, 0.2–0.3 px;
+16+ → 31 px off (table). Size mode 72 cm error vs depth 1.8 cm. Gap 1 → 5/10 hits, 3 → 9/10,
+6 → 8/10, 12 → 1/10 (no forecast in time); bounce rule off at gap 3 → 6/10.
 
 | Step | Player does | Pass |
 |---|---|---|
-| 1 Label | Tap each of 18 photos → red / blue / yellow | All 18 labelled, ≥ 2 per class |
-| 2 Train | Press TRAIN | Model trained (accuracy shown) |
-| 3 Test | Reveal 12 predictions; per-class correct counts | Viewed, pressed NEXT |
-| 4 Improve | Label 6 harder photos, retrain, compare on the same 12 | Retrained |
-| 5 Real object | Upload/take a photo (`<input type=file accept=image/* capture=environment>`); centre-crop → prediction + scores | One prediction shown |
-| Concept | "Why test on photos the robot never saw?" → to know if it learned the colour, not the photos | Correct answer |
+| 1 What the camera sees | Serve; watch colour + depth; answer "which picture tells distance?" | Depth |
+| 2 Find the ball | Pick a hue width (±2/6/10/16/30°), serve | Found ≥ 90 % of frames and ≤ 1 px off |
+| 3 Where is it? | "Guess from size" vs "read the depth picture", serve | Depth mode and ≤ 3 cm |
+| 4 How fast, where will it land? | Pick the frame gap (1/3/6/12) and the bounce rule; serve 28; forecast graph | Forecast ≤ 5 cm, in time |
+| 5 The exam | 10 unseen serves with the player's settings; hit/miss list | ≥ 8 hits |
+| Concept | "What else does a pixel need to become metres?" → the depth at that pixel | Correct answer |
+
+Real-robot counterpart: `bracket_pong/education/ball_tracker.py` (numpy only) runs the same
+pipeline on real colour + depth frames with the camera's intrinsics; `tests/test_ball_tracker.py`.
 
 ### A6. Robot model
 
@@ -214,8 +232,9 @@ game/
   audio.js            SFX/music playback (unlock on first input)
   hub.js              hub screen
   levels/pid.js       Level 1 flow (uses sim/pid.js)
-  levels/rl.js        Level 2 flow (uses sim/rally.js)
-  levels/vision.js    Level 3 flow (uses sim/vision.js)
+  levels/vision.js    Level 2 flow (uses sim/vision.js)
+  levels/rl.js        Level 3 flow (uses sim/rally.js)
+  levels/table.js     the shared rally table
   sim/pid.js          pure sim: runTrial(gains, disturbance) → {trajectory, metrics}
   sim/rally.js        pure sim: serve(rng), simulate(serve, action), Policy, train(), evaluate()
   sim/vision.js       pure: makeSamples(), features(), train(), predict()

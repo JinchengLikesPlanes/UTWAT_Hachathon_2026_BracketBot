@@ -27,15 +27,30 @@ node --test 'game/tests/*.test.mjs'   # sims, FK, state (no browser needed)
 node game/tests/browser.mjs          # full flow in headless Chrome, server must be running
 ```
 
+## The story of the game
+
+One mission — *teach BracketBot to play pong* — in three skills, in order:
+
+1. **Stand Up** (PID): the two-wheeled robot falls under gravity; the player adds P, D, Hold and I
+   until it stands, holds its spot and shrugs off pushes.
+2. **See the Ball** (vision): the depth camera in the head gives a colour and a depth picture
+   30 times a second. The player builds the tracking pipeline — colour width, depth vs size,
+   frame gap and bounce rule — until the robot forecasts where the ball will cross its paddle
+   line within 5 cm on 8 of 10 unseen serves. The output is the ball's x, y, vx, vy — the same
+   observation `bracket_pong/rally.py` feeds its policy. `bracket_pong/education/ball_tracker.py`
+   is that pipeline for real frames.
+3. **Play Pong** (RL): those four numbers go into a policy that learns by trial and error, and
+   the badge card launches the full MuJoCo pong game.
+
 ## How the RL works
 
 There are two reinforcement-learning systems in this repo, and the game deliberately mirrors
-one with the other: Level 2 trains a tiny policy in the browser with the simplest possible
+one with the other: Level 3 trains a tiny policy in the browser with the simplest possible
 policy gradient, and the "Play the real pong game" card at the end of that level launches the
 MuJoCo rally whose policy was trained with PPO. Both follow the same five steps: set the task,
 pick senses and controls, design a reward, train, evaluate on serves the robot never saw.
 
-### In-browser game (Level 2 "Teach the Rally") — REINFORCE
+### In-browser game (Level 3 "Play Pong") — REINFORCE
 
 Code: `game/sim/rally.js` (sim + learning), `game/levels/rl.js` (the seven on-screen steps),
 spec in `docs/GAME_PLAN.md` § A4.
@@ -207,7 +222,7 @@ Either of these works; both open the same window.
 ```
 
 **From the browser game:** run `python3 game/serve.py`, open <http://127.0.0.1:8000>, finish
-Level 2 ("Teach the Rally") and press **Start the pong game** on the badge card. `serve.py` starts
+Level 3 ("Play Pong") and press **Start the pong game** on the badge card. `serve.py` starts
 the command above for you (`POST /launch`); a plain `python3 -m http.server` cannot, so the
 button will tell you to use the terminal instead.
 
