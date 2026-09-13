@@ -1,49 +1,67 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { LABELS, makeSets, features, trainClassifier, predict } from '../sim/vision.js'
+import * as V from '../sim/vision.js'
 
-const labelled = (set, map = l => l) => set.map(s => ({ features: features(s), label: map(s.truth) }))
-const score = (model, set) => set.filter(s => predict(model, features(s)).label === s.truth).length
+const serves = n => Array.from({ length: n }, (_, i) => V.serveFor(500 + i))
+const runAll = (opts, n = 10) => serves(n).map((s, i) => V.track(s, opts, V.rngFor(500 + i)))
+const mean = (rs, k) => rs.reduce((a, r) => a + (r[k] ?? 0), 0) / rs.length
+const hits = rs => rs.filter(r => r.hit).length
 
-test('sets are deterministic and balanced', () => {
-  const a = makeSets(), b = makeSets()
-  assert.deepEqual(a, b)
-  assert.equal(a.train.length, 18); assert.equal(a.test.length, 12); assert.equal(a.improve.length, 6)
-  for (const l of LABELS) {
-    assert.equal(a.train.filter(s => s.truth === l).length, 6)
-    assert.equal(a.test.filter(s => s.truth === l).length, 4)
-    assert.equal(a.improve.filter(s => s.truth === l).length, 2)
+test('camera model: project and deproject are inverses', () => {
+  for (const [x, y] of [[2.4, 0.3], [1.0, 0.05], [0.4, 0.45]]) {
+    const p = V.project(x, y)
+    const w = V.deproject(p.u, p.v, p.Z)
+    assert.ok(Math.abs(w.x - x) < 1e-9 && Math.abs(w.y - y) < 1e-9 && Math.abs(w.z) < 1e-9)
   }
-  for (const f of features(a.train[0])) assert.ok(f >= 0 && f <= 1)
 })
 
-test('correct labels → ≥ 10/12 on the unseen test set', () => {
-  const { train, test: t } = makeSets()
-  const m = trainClassifier(labelled(train))
-  assert.ok(m.accuracy >= 0.9, `train acc ${m.accuracy}`)
-  const s = score(m, t)
-  assert.ok(s >= 10, `test ${s}/12`)
+test('frames are deterministic and the ball is where the camera model says', () => {
+  const ball = { x: 1.2, y: 0.25 }
+  const a = V.renderFrame(ball), b = V.renderFrame(ball)
+  assert.deepEqual(a.rgb, b.rgb); assert.deepEqual(a.depth, b.depth)
+  const det = V.detect(a, 8), truth = V.project(ball.x, ball.y)
+  assert.ok(det.found && Math.hypot(det.u - truth.u, det.v - truth.v) < 1)
+  assert.ok(Math.abs(a.depth[Math.round(det.v) * V.CAM.W + Math.round(det.u)] - truth.Z) < V.BALL_R)
 })
 
-test('swapping red and blue labels flips predictions', () => {
-  const { train, test: t } = makeSets()
-  const swap = l => (l === 'red' ? 'blue' : l === 'blue' ? 'red' : l)
-  const m = trainClassifier(labelled(train, swap))
-  const reds = t.filter(s => s.truth === 'red')
-  assert.ok(reds.every(s => predict(m, features(s)).label === 'blue'), 'reds should be called blue')
+test('colour width: too narrow loses the ball, too wide grabs the table', () => {
+  const narrow = runAll({ width: 2 }), good = runAll({ width: 8 }), wide = runAll({ width: 30 })
+  assert.ok(mean(narrow, 'foundRate') < 0.85, `narrow found ${mean(narrow, 'foundRate')}`)
+  assert.ok(mean(good, 'foundRate') > 0.9 && mean(good, 'pxErr') < 0.6, `good found ${mean(good, 'foundRate')} px ${mean(good, 'pxErr')}`)
+  assert.ok(mean(wide, 'pxErr') > 10, `wide px ${mean(wide, 'pxErr')}`)
 })
 
-test('fewer than 2 examples of a class throws', () => {
-  const { train } = makeSets()
-  const few = labelled(train).filter((s, i) => s.label !== 'yellow' || i < 1)
-  assert.throws(() => trainClassifier(few), /yellow/)
+test('depth beats guessing distance from the ball\'s size', () => {
+  const depth = runAll({ width: 8, mode: 'depth' }), size = runAll({ width: 8, mode: 'size' })
+  assert.ok(mean(depth, 'posErr') < 0.03, `depth ${mean(depth, 'posErr')}`)
+  assert.ok(mean(size, 'posErr') > 0.15, `size ${mean(size, 'posErr')}`)
 })
 
-test('the improve set is hard, then learnable', () => {
-  const { train, improve } = makeSets()
-  const before = trainClassifier(labelled(train))
-  const after = trainClassifier(labelled([...train, ...improve]))
-  const sb = score(before, improve), sa = score(after, improve)
-  assert.ok(sb <= 4, `before ${sb}/6 (should be hard)`)
-  assert.ok(sa >= 5, `after ${sa}/6`)
+test('velocity gap: 1 frame is noisy, 12 frames span the bounce, 3 is best', () => {
+  const g1 = runAll({ width: 8, gap: 1 }), g3 = runAll({ width: 8, gap: 3 }), g12 = runAll({ width: 8, gap: 12 })
+  assert.ok(hits(g3) > hits(g1), `gap1 ${hits(g1)} gap3 ${hits(g3)}`)
+  assert.ok(hits(g3) > hits(g12), `gap12 ${hits(g12)} gap3 ${hits(g3)}`)
+  assert.ok(hits(g3) >= 8)
+})
+
+test('the bounce rule removes the forecast jump', () => {
+  const on = runAll({ width: 8, gap: 3, bounceRule: true }), off = runAll({ width: 8, gap: 3, bounceRule: false })
+  assert.ok(hits(on) >= hits(off) + 2, `on ${hits(on)} off ${hits(off)}`)
+  assert.ok(mean(on, 'predErr') < mean(off, 'predErr'))
+})
+
+test('exam: good settings pass, a wide colour window fails, and it is reproducible', () => {
+  const good = V.exam({ width: 8, mode: 'depth', gap: 3, bounceRule: true })
+  assert.ok(good.pass && good.hits >= 8, `good ${good.hits}/${good.n}`)
+  const bad = V.exam({ width: 30, mode: 'depth', gap: 3, bounceRule: true })
+  assert.ok(!bad.pass, `bad ${bad.hits}`)
+  assert.equal(V.exam({ width: 8, gap: 3 }).hits, good.hits)
+})
+
+test('the decision comes early enough for the arm and carries the policy\'s four inputs', () => {
+  for (const r of runAll({ width: 8, gap: 3 })) {
+    assert.ok(r.decision, 'no decision')
+    assert.ok(r.crossT - r.decision.t > 0.15, `only ${r.crossT - r.decision.t} s before crossing`)
+    for (const k of ['x', 'y', 'vx', 'vy']) assert.equal(typeof r.decision[k], 'number')
+  }
 })
