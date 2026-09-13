@@ -1,15 +1,36 @@
 # BracketBot Robotics
 
-**Direction:** a standalone browser game where kids complete small tasks with the real
-BracketBot model to learn PID, RL and vision — see **[docs/GAME_PLAN.md](docs/GAME_PLAN.md)**
-(design + implementation plan; the single source of direction). The founding intent is in
-[note.md](note.md); real-world reproduction guides are in
+A browser game in which kids (10–13) complete small missions with the **real BracketBot
+model** (the original URDF meshes) to learn PID control, the five steps of training an RL
+ping-pong policy, and simple visual machine learning. Nothing is faked: the PID loop, the
+policy-gradient training and the colour classifier all run for real in the browser, and every
+mission ends with a "Try it on the real BracketBot" card.
+
+Direction: **[docs/GAME_PLAN.md](docs/GAME_PLAN.md)** (design + implementation plan, the single
+source of direction). Founding intent: [note.md](note.md). Physical activity guide:
 [docs/CLASSROOM_LABS.md](docs/CLASSROOM_LABS.md).
 
-The game lives in `game/` (in progress). Everything below is the existing code the game
-builds on: the MuJoCo + Gymnasium + PPO training stack, the desktop rally match, and the
-earlier local Learning Lab (spec in [docs/LEARNING_LAB_SPEC.md](docs/LEARNING_LAB_SPEC.md)).
-The original asset bundle (URDF + Draco meshes) is in `chopped_urdf_v2/`.
+## Play the game
+
+```sh
+cd game && python3 -m http.server 8000
+```
+
+Open <http://127.0.0.1:8000> (add `?dev=1` for the fps overlay). Works with mouse, touch and
+keyboard; progress is saved in the browser. See [game/README.md](game/README.md) for the
+layout, tests and deployment.
+
+```sh
+node --test 'game/tests/*.test.mjs'   # sims, FK, state (no browser needed)
+node game/tests/browser.mjs          # full flow in headless Chrome, server must be running
+```
+
+## Also in this repo
+
+Everything below is the earlier code the game builds on: the MuJoCo + Gymnasium + PPO
+training stack, the desktop rally match, and the local Learning Lab (spec in
+[docs/LEARNING_LAB_SPEC.md](docs/LEARNING_LAB_SPEC.md)). The original asset bundle (URDF +
+Draco meshes) is in `chopped_urdf_v2/`.
 
 ## BracketBot Learning Lab
 

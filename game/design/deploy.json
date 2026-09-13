@@ -1,0 +1,11 @@
+{
+  "game_id": null,
+  "url": null,
+  "status": "not deployed",
+  "blockers": [
+    "higgsfield CLI v1.1.24 (latest release, 2026-08-29) has no `game` subcommand; the skill's `higgsfield game deploy` is unavailable",
+    "no Higgsfield login on this machine (`higgsfield auth login` + `higgsfield workspace set`)"
+  ],
+  "package": "artifacts/bracketbot-game.zip (built from game/, excludes tests/ tools/ README.md)",
+  "alternatives": ["higgsfield website create/deploy (static site via its git repo)", "GitHub Pages serving the game/ directory", "any static host"]
+}
